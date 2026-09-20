@@ -1,6 +1,29 @@
 # DEA Flow Lab
 
-AWS Certified Data Engineer – Associate（DEA-C01）の学習用ローカルWebアプリです。サービス単体の説明から、比較、アーキテクチャ、問題文での判断へ進めます。Miroの成果物には依存していません。
+AWS Certified Data Engineer – Associate（DEA-C01）の学習用Webアプリです。サービス単体の説明から、比較、アーキテクチャ、問題文での判断へ進めます。ローカルでも利用できます。
+
+**公開サイト：[DEA Flow Lab](https://oxyut.github.io/aws-dea-learning-app/)**
+
+## GitHub Pagesへの自動公開
+
+`.github/workflows/pages.yml` で、`main` へのpush時に以下を実行します。
+
+1. Node.js 22で `npm ci` を実行。
+2. `npm test` とTypeScriptチェックを含む `npm run build` を実行。
+3. 成功した場合のみ、生成した `dist/` をGitHub Pagesへ公開。
+
+GitHub Actions画面から手動実行もできます。個人アクセストークン等の追加シークレットは不要で、GitHubが発行するトークンとOIDCを利用します。デプロイ権限は公開ジョブに限定しています。
+
+Pagesのパスは `actions/configure-pages` の出力からViteの `BASE_PATH` へ渡します。通常のローカル起動では `/` を使用します。公開と同じパスでビルドを試す場合：
+
+```sh
+BASE_PATH=/aws-dea-learning-app/ npm run build
+npm run preview
+```
+
+この場合は `http://127.0.0.1:4173/aws-dea-learning-app/` を開きます。
+
+[デプロイの実行履歴](https://github.com/oXyut/aws-dea-learning-app/actions/workflows/pages.yml)
 
 ## 起動
 

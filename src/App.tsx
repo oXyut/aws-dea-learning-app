@@ -133,7 +133,7 @@ export default function App() {
         </div>
         <div className="sidebar-footer">
           <span className="local-status" />
-          ローカル学習ワークスペース<small>独自教材 · AWS非公式</small>
+          DEA-C01 学習ワークスペース<small>独自教材 · AWS非公式</small>
         </div>
       </aside>
       {mobileMenu && (
