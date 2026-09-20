@@ -26,6 +26,7 @@ export interface Pattern {
   alternative: string;
   exam: string;
   keywords: string[];
+  sources?: { title: string; url: string }[];
   nodes: FlowNode[];
   edges: FlowEdge[];
   steps: { node: string; title: string; text: string }[];
@@ -654,6 +655,489 @@ export const patterns: Pattern[] = [
         node: 'etl',
         title: '実データを変換する',
         text: 'GlueがS3からデータを読みます。イベント経路にデータ本体は流れません。',
+      },
+    ],
+  },
+  {
+    id: 'scheduled-ingestion',
+    name: 'Scheduled API Ingestion',
+    ja: '決まった時刻に、APIから収集',
+    tag: '定期実行',
+    time: '7 min',
+    description:
+      'cronで動かしていた短いPython処理を、SchedulerとLambdaで定期実行し、取得結果をS3に保存します。',
+    why: '時刻の管理はScheduler、API呼び出しと保存はLambdaが担当します。サーバーを常時稼働させずに定期収集を実行できます。',
+    alternative:
+      '長時間処理ならコンテナやバッチも候補。複数ステップの依存関係があるならStep Functionsで管理します。CloudShellは定期本番ジョブの実行基盤ではありません。',
+    exam: '定時にAPIを呼び、15分以内のPython処理でS3へ保存 → Scheduler + Lambda。ファイル到着イベントを待つ構成とは起動条件が違います。',
+    keywords: ['cron', 'rate', 'scheduled Lambda', 'Python'],
+    sources: [
+      {
+        title: 'SchedulerからLambdaを起動',
+        url: 'https://docs.aws.amazon.com/lambda/latest/dg/with-eventbridge-scheduler.html',
+      },
+    ],
+    nodes: [
+      {
+        id: 'clock',
+        service: 'scheduler',
+        subtitle: '時刻・間隔で起動',
+        x: 60,
+        y: 40,
+        role: '実行時刻・タイムゾーンを設定し、実行ロールでLambdaの呼び出しを許可します。Schedulerの再試行とDLQは呼び出しの配信失敗を扱います。Lambdaで受理後に起きる実行エラーは別に扱います。',
+      },
+      {
+        id: 'api',
+        label: 'External API',
+        subtitle: '取得先のAPI',
+        x: 60,
+        y: 240,
+        role: 'Lambdaからのリクエストに対してデータを返します。図の実線は応答データの向きを示し、HTTPリクエストの往路は省略しています。',
+      },
+      {
+        id: 'collect',
+        service: 'lambda',
+        subtitle: 'Pythonで収集・整形',
+        x: 420,
+        y: 150,
+        role: 'Schedulerの非同期呼び出しで起動し、APIを呼び出してS3へ書き込みます。API認証、通信経路、再試行時の重複防止を設計します。',
+      },
+      {
+        id: 'store',
+        service: 's3',
+        subtitle: '収集結果を保存',
+        x: 780,
+        y: 150,
+        role: '日付や処理対象をキーにして収集結果を保存。Lambda実行ロールへ必要なプレフィックスのPutObjectを許可します。',
+      },
+    ],
+    edges: [
+      { from: 'clock', to: 'collect', label: '時刻で起動', kind: 'event' },
+      { from: 'api', to: 'collect', label: 'API応答', kind: 'data' },
+      { from: 'collect', to: 'store', label: '取得結果', kind: 'data' },
+    ],
+    steps: [
+      {
+        node: 'clock',
+        title: '時間を起動条件にする',
+        text: 'Schedulerがcron・rate式や一回限りの予定を管理します。起動を許可するロールを設定し、配信失敗にはSchedulerの再試行とDLQを用意します。Lambdaの実行エラーにはLambda側の失敗時送信先などを設定します。',
+      },
+      {
+        node: 'collect',
+        title: 'Pythonの処理を実行する',
+        text: 'LambdaがAPIを呼び出し、応答を必要な形へ整えます。SchedulerからAPIの実データが届くわけではありません。',
+      },
+      {
+        node: 'store',
+        title: '再実行しても安全に保存する',
+        text: '対象期間とキー設計をそろえ、重複実行でデータが二重登録されないようにします。',
+      },
+    ],
+  },
+  {
+    id: 'firehose-conversion',
+    name: 'Firehose Format Conversion',
+    ja: '配信しながら、Parquetへ変換',
+    tag: 'マネージド変換',
+    time: '7 min',
+    description:
+      '継続ログをFirehoseで受信し、JSONからParquet / ORCへ変換してS3へ届けます。図の2つのFirehoseは同一ストリーム内の処理段階です。',
+    why: '入力の整形は必要に応じてLambda、列指向形式への変換はFirehoseの標準機能が担当します。Catalogはスキーマだけを提供します。',
+    alternative:
+      '入力が対応するJSONならLambdaを省略できます。複雑な結合や履歴全体の再処理には、S3保存後のGlue ETLなどを検討します。',
+    exam: '継続ログを低運用負荷でParquet化 → Firehoseの形式変換。LambdaがParquetへ変換することを必須条件にせず、JSON整形と形式変換を区別します。',
+    keywords: ['JSON', 'Parquet', 'ORC', 'record format conversion'],
+    sources: [
+      {
+        title: 'Firehoseの形式変換',
+        url: 'https://docs.aws.amazon.com/firehose/latest/dev/record-format-conversion.html',
+      },
+    ],
+    nodes: [
+      {
+        id: 'receive',
+        service: 'firehose',
+        subtitle: '同一ストリーム：受信',
+        x: 40,
+        y: 210,
+        role: 'アプリなどからログを受信。変換を有効にした場合はLambdaを呼び出します。図では送信元と変換結果の戻りを省略し、処理順で表しています。',
+      },
+      {
+        id: 'normalize',
+        service: 'lambda',
+        subtitle: '任意：JSONへ整形',
+        x: 280,
+        y: 210,
+        role: 'CSVや独自形式などをJSONへ整え、Firehoseへ結果を返します。既に対応するJSONならこの処理は不要です。',
+      },
+      {
+        id: 'schema',
+        service: 'catalog',
+        subtitle: '入力と一致する定義',
+        x: 520,
+        y: 30,
+        role: '入力JSONの列・型をFirehoseに提供します。Catalogからログ本体は流れず、Crawlerによる自動登録もこの構成の必須条件ではありません。',
+      },
+      {
+        id: 'convert',
+        service: 'firehose',
+        subtitle: '同一ストリーム：変換',
+        x: 520,
+        y: 210,
+        role: 'Catalogの定義でJSONを解釈し、標準の形式変換機能でParquetまたはORCへ変換します。図の受信ノードと同じFirehoseストリームです。',
+      },
+      {
+        id: 'store',
+        service: 's3',
+        subtitle: '列指向形式で保存',
+        x: 780,
+        y: 210,
+        role: 'Firehoseがバッファリングしたデータを保存します。配信遅延と変換失敗の出力先を確認します。',
+      },
+    ],
+    edges: [
+      { from: 'receive', to: 'normalize', label: '変換対象', kind: 'data' },
+      { from: 'normalize', to: 'convert', label: 'JSONを返却', kind: 'data' },
+      { from: 'schema', to: 'convert', label: 'スキーマ', kind: 'metadata' },
+      { from: 'convert', to: 'store', label: 'Parquet / ORC', kind: 'data' },
+    ],
+    steps: [
+      {
+        node: 'receive',
+        title: '配信ストリームに送る',
+        text: 'Firehoseがログを受信し、バッファと配信を管理します。2つのノードを別々のストリームとして作成する意味ではありません。',
+      },
+      {
+        node: 'normalize',
+        title: '必要な場合だけJSONへ整える',
+        text: 'Lambda変換の出力はJSONです。ここでParquet化を自作することを前提にしません。',
+      },
+      {
+        node: 'schema',
+        title: '入力の構造を定義する',
+        text: 'Catalogの列と型をJSONに合わせます。入力にあっても定義されていない属性は変換結果に含まれません。',
+      },
+      {
+        node: 'convert',
+        title: 'Firehose自身が形式を変換',
+        text: '標準機能でParquet / ORCへ変換し、S3へ配信します。実データとスキーマの経路を区別します。',
+      },
+    ],
+  },
+  {
+    id: 'pii-remediation',
+    name: 'Sensitive Data Remediation',
+    ja: '機密情報の検出から、対処へ',
+    tag: '検出と制御',
+    time: '8 min',
+    description:
+      'Macieの検出結果をEventBridgeで選別し、既存のマスキング処理を起動します。検出イベントとS3の実データは別の経路です。',
+    why: 'MacieはPIIなどの機密情報を検出し、EventBridgeはfindingに応じて処理を起動。マスキングの実装はアプリが担当します。',
+    alternative:
+      'S3の新規アップロード通知は到着を示すだけで、PII検出済みを意味しません。定期ポーリングの代わりにfindingイベントを処理します。',
+    exam: '機密情報が見つかったときにだけ既存処理を呼びたい → Macie finding → EventBridgeルール。Macie自体はファイルをマスキングしません。',
+    keywords: ['PII', 'Macie Finding', 'default event bus', 'masking'],
+    sources: [
+      {
+        title: 'Macie findingをEventBridgeで処理',
+        url: 'https://docs.aws.amazon.com/macie/latest/user/findings-monitor-events-eventbridge.html',
+      },
+    ],
+    nodes: [
+      {
+        id: 'raw',
+        service: 's3',
+        subtitle: '検査対象のデータ',
+        x: 20,
+        y: 180,
+        role: '対象オブジェクトの実データを保持します。Macieの検出設定・対象と、処理アプリが読み取る権限をそれぞれ設定します。',
+      },
+      {
+        id: 'detect',
+        service: 'macie',
+        subtitle: '機密データを検出',
+        x: 220,
+        y: 30,
+        role: 'S3の対象データを分析してfindingを生成します。アップロードのたびに即時検出されると決めつけず、検出方法と対象を確認します。',
+      },
+      {
+        id: 'route',
+        service: 'eventbridge',
+        subtitle: 'デフォルトバス',
+        x: 420,
+        y: 30,
+        role: 'Macie Findingイベントを受け、種別や重要度などの条件で対象を絞ります。イベントには検出情報とオブジェクトの参照が含まれ、元ファイル本体を転送しません。',
+      },
+      {
+        id: 'mask',
+        label: 'Masking App',
+        subtitle: '既存処理を呼び出す',
+        x: 620,
+        y: 180,
+        role: '対応ターゲットやLambdaなどのアダプターで既存処理を起動します。S3の元データを取得し、必要な項目をマスキング。重複イベントにも対処します。',
+      },
+      {
+        id: 'safe',
+        service: 's3',
+        subtitle: '処理済みの保存先',
+        x: 820,
+        y: 180,
+        role: 'マスキング済みの結果を別プレフィックスなどに保存し、処理前後のアクセス権を分けます。',
+      },
+    ],
+    edges: [
+      { from: 'raw', to: 'detect', label: '対象を分析', kind: 'data' },
+      { from: 'detect', to: 'route', label: 'finding', kind: 'event' },
+      { from: 'route', to: 'mask', label: '処理を起動', kind: 'event' },
+      { from: 'raw', to: 'mask', label: '元データを取得', kind: 'data', bend: 95 },
+      { from: 'mask', to: 'safe', label: '処理結果', kind: 'data' },
+    ],
+    steps: [
+      {
+        node: 'detect',
+        title: '検出結果を作る',
+        text: 'Macieが機密情報を検出します。到着通知と検出結果は異なります。',
+      },
+      {
+        node: 'route',
+        title: '対象のfindingを選別する',
+        text: 'デフォルトイベントバスでルールを設定し、必要なfindingだけを処理へ渡します。',
+      },
+      {
+        node: 'mask',
+        title: '参照から元データを取得',
+        text: 'イベントに含まれる対象情報を使ってS3を読み、既存のマスキングロジックを実行します。',
+      },
+      {
+        node: 'safe',
+        title: '結果を安全な領域へ保存',
+        text: '処理済み出力を保存します。イベントの通知を受けるだけでは元データは変更されません。',
+      },
+    ],
+  },
+  {
+    id: 'shared-files',
+    name: 'Shared Files with Lambda',
+    ja: '複数のLambdaで、ファイルを共有',
+    tag: '共有ストレージ',
+    time: '6 min',
+    description:
+      '複数のLambda実行環境がEFSをマウントし、同じファイルを利用します。図では片方が書き込み、もう片方が読み取る例を示します。',
+    why: 'EFSは共有NFSファイルシステムです。各実行環境に閉じた/tmpとは異なり、複数のLambdaから同じ永続ファイルへアクセスできます。',
+    alternative:
+      'ファイル操作の互換性が不要なオブジェクト保管ならS3。共有不要の一時ファイルなら/tmpを使い、LambdaへEBSを直接アタッチする構成は選びません。',
+    exam: '複数Lambdaから共有NFSをマウント → EFS。ローカルの一時領域を増やしても、実行環境間の共有にはなりません。',
+    keywords: ['NFS', 'access point', 'VPC', '/mnt', '/tmp'],
+    sources: [
+      {
+        title: 'LambdaのEFSアクセス設定',
+        url: 'https://docs.aws.amazon.com/lambda/latest/dg/configuration-filesystem-efs.html',
+      },
+    ],
+    nodes: [
+      {
+        id: 'writer',
+        service: 'lambda',
+        subtitle: '実行環境A：書き込み',
+        x: 70,
+        y: 160,
+        role: 'アクセスポイント経由でEFSを/mnt配下へマウントしてファイルを作ります。VPC接続とEFSに対する必要な権限を用意します。',
+      },
+      {
+        id: 'files',
+        service: 'efs',
+        subtitle: '共有・永続ファイル',
+        x: 420,
+        y: 160,
+        role: '複数の実行環境に同じファイルシステムを提供します。マウントターゲットへのNFS通信（TCP 2049）とファイル権限を確認します。',
+      },
+      {
+        id: 'reader',
+        service: 'lambda',
+        subtitle: '実行環境B：読み取り',
+        x: 770,
+        y: 160,
+        role: '同じEFSをマウントして共有ファイルを読みます。同一関数の別実行環境でも別関数でも、アクセス権を与えて利用できます。',
+      },
+    ],
+    edges: [
+      { from: 'writer', to: 'files', label: 'NFS書き込み', kind: 'data' },
+      { from: 'files', to: 'reader', label: 'NFS読み取り', kind: 'data' },
+    ],
+    steps: [
+      {
+        node: 'files',
+        title: '共有ファイルシステムを用意',
+        text: 'EFSのアクセスポイントとマウントターゲットを設定し、Lambdaから届くネットワーク経路を確保します。',
+      },
+      {
+        node: 'writer',
+        title: '各Lambdaにマウントする',
+        text: 'VPC・セキュリティグループ・IAMとファイルの権限を確認し、/mnt配下のローカルパスに接続します。',
+      },
+      {
+        node: 'reader',
+        title: '同じファイルを利用する',
+        text: '同時更新があるならアプリで整合性やロックを設計します。共有ストレージの採用だけで更新競合がなくなるわけではありません。',
+      },
+    ],
+  },
+  {
+    id: 'saas-warehouse',
+    name: 'SaaS to Data Warehouse',
+    ja: 'SaaSのデータを、DWHへ連携',
+    tag: 'SaaS連携',
+    time: '7 min',
+    description:
+      '対応SaaSのデータをAppFlowで取得し、S3の中間保存を経由してRedshiftへロードします。',
+    why: '対応コネクタで認証・項目マッピング・転送を構成し、SaaS APIの連携処理を一から実装する負荷を抑えます。',
+    alternative:
+      '未対応のAPIや独自ロジックにはLambdaなどで自作。AppFlowの対応ソース、送信先、実行方式と転送制約を事前に確認します。',
+    exam: '対応SaaSからRedshiftへ少ないコードで取り込む → AppFlow。Redshift接続では中間S3とIAM権限も必要です。',
+    keywords: ['SaaS', 'managed connector', 'staging', 'AppFlow'],
+    sources: [
+      {
+        title: 'AppFlowのRedshiftコネクタ',
+        url: 'https://docs.aws.amazon.com/appflow/latest/userguide/redshift.html',
+      },
+    ],
+    nodes: [
+      {
+        id: 'saas',
+        label: 'SaaS',
+        subtitle: '対応するデータソース',
+        x: 30,
+        y: 160,
+        role: 'SaaSコネクタの対応状況と必要な認証を確認します。利用できるスケジュール・イベント起動などはソースによって異なります。',
+      },
+      {
+        id: 'flow',
+        service: 'appflow',
+        subtitle: '取得・マッピング',
+        x: 280,
+        y: 160,
+        role: '接続・項目のマッピング・フィルターなどを設定して転送します。対応する方式で実行し、S3を中間保存先に使います。',
+      },
+      {
+        id: 'stage',
+        service: 's3',
+        subtitle: '中間ステージング',
+        x: 530,
+        y: 160,
+        role: 'AppFlowが一時的な転送先としてデータを書き込みます。Redshiftにはこのバケットを読み取り、必要なら復号する権限を与えます。',
+      },
+      {
+        id: 'warehouse',
+        service: 'redshift',
+        subtitle: '分析テーブルへロード',
+        x: 780,
+        y: 160,
+        role: '中間S3からデータを取得して分析に利用します。接続方式・DB権限・IAMロールを設定。AppFlowの転送はinsertをサポートし、update / upsertとは区別します。',
+      },
+    ],
+    edges: [
+      { from: 'saas', to: 'flow', label: 'コネクタ', kind: 'data' },
+      { from: 'flow', to: 'stage', label: '中間出力', kind: 'data' },
+      { from: 'stage', to: 'warehouse', label: 'ロード', kind: 'data' },
+    ],
+    steps: [
+      {
+        node: 'saas',
+        title: '対応状況と認証を確認',
+        text: '使いたいSaaS、対象オブジェクトと起動方式がコネクタで利用できるかを確認します。',
+      },
+      {
+        node: 'flow',
+        title: 'フローを設定する',
+        text: '取得する項目とRedshiftの接続を設定します。標準連携で済む部分をマネージド機能へ任せます。',
+      },
+      {
+        node: 'stage',
+        title: '中間S3の権限を付ける',
+        text: 'AppFlowの出力先バケットと、Redshiftがそのデータを読み取るロールを設定します。',
+      },
+      {
+        node: 'warehouse',
+        title: 'ロード後の利用を設計する',
+        text: '挿入と更新を区別し、重複や再実行の扱いを確認して分析テーブルへ反映します。',
+      },
+    ],
+  },
+  {
+    id: 'warehouse-sharing',
+    name: 'Redshift Data Sharing',
+    ja: 'データを複製せず、計算を分ける',
+    tag: 'データ共有',
+    time: '8 min',
+    description:
+      '本番Redshiftの共有対象をdatashareで公開し、利用側のServerlessで分析します。図の実線は共有データの参照で、別DBへのコピー処理ではありません。',
+    why: 'データ提供側と利用側の計算を分離し、同じライブデータにアクセスできます。断続的な分析には利用側のServerlessが候補です。',
+    alternative:
+      '独立した時点コピーが必要ならスナップショット。UNLOAD / COPYはデータを移動する方式であり、ライブデータ共有とは役割が異なります。',
+    exam: '最新データを複製せずに別の計算容量で分析 → Redshift data sharing。Serverlessを使っても権限・利用量・費用の管理は必要です。',
+    keywords: ['datashare', 'producer', 'consumer', 'Redshift Serverless'],
+    sources: [
+      {
+        title: 'Redshiftの標準datashare',
+        url: 'https://docs.aws.amazon.com/redshift/latest/dg/standard_datashare.html',
+      },
+      {
+        title: '共有オブジェクトと権限',
+        url: 'https://docs.aws.amazon.com/redshift/latest/dg/datashare-creation.html',
+      },
+    ],
+    nodes: [
+      {
+        id: 'producer',
+        service: 'redshift',
+        subtitle: '提供側：Producer',
+        x: 80,
+        y: 160,
+        role: 'データを持つ提供側。共有対象のスキーマ・テーブルなどをdatashareへ追加し、利用側に必要な権限を与えます。',
+      },
+      {
+        id: 'share',
+        label: 'Datashare',
+        subtitle: '共有対象とアクセス権',
+        x: 420,
+        y: 30,
+        role: '共有するDBオブジェクト・権限・利用先を定義する論理的な入れ物です。S3ステージングや複製先のDBではありません。',
+      },
+      {
+        id: 'consumer',
+        service: 'redshift',
+        subtitle: '利用側：Serverless',
+        x: 770,
+        y: 160,
+        role: '共有から作成したデータベースを、利用側のServerlessワークグループでクエリします。この図は読み取り共有の例で、COPYによる別テーブルへの複製を行いません。',
+      },
+    ],
+    edges: [
+      { from: 'producer', to: 'share', label: '共有対象を定義', kind: 'metadata' },
+      { from: 'share', to: 'consumer', label: '利用を許可', kind: 'metadata' },
+      {
+        from: 'producer',
+        to: 'consumer',
+        label: 'ライブデータを参照（COPYによる複製なし）',
+        kind: 'data',
+        bend: 110,
+      },
+    ],
+    steps: [
+      {
+        node: 'producer',
+        title: '共有する範囲を選ぶ',
+        text: 'Producerがdatashareに必要なオブジェクトを追加します。DB全体を無条件に公開するわけではありません。',
+      },
+      {
+        node: 'share',
+        title: '利用側を許可する',
+        text: '共有対象とConsumerの権限を設定します。アカウントをまたぐ場合は共有の承認などの要件も確認します。',
+      },
+      {
+        node: 'consumer',
+        title: '別の計算容量で読む',
+        text: 'Consumerが共有を参照するDBを作り、Serverlessでクエリします。UNLOAD → S3 → COPYの転送パイプラインは不要です。',
       },
     ],
   },

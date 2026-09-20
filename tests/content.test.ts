@@ -40,6 +40,11 @@ test('required service coverage, unique identifiers and valid integrations', () 
     'kms',
     'secrets',
     'macie',
+    'efs',
+    'eks',
+    'appflow',
+    'scheduler',
+    'parameterstore',
   ];
   assert.equal(new Set(services.map((s) => s.id)).size, services.length);
   for (const id of required) assert.ok(serviceMap[id], id);
@@ -57,8 +62,8 @@ test('required service coverage, unique identifiers and valid integrations', () 
 });
 
 test('all architecture graphs are connected and reference existing services and steps', () => {
-  assert.equal(patterns.length, 8);
-  assert.equal(new Set(patterns.map((p) => p.id)).size, 8);
+  assert.equal(patterns.length, 14);
+  assert.equal(new Set(patterns.map((p) => p.id)).size, patterns.length);
   for (const p of patterns) {
     const ids = new Set(p.nodes.map((n) => n.id));
     assert.equal(ids.size, p.nodes.length);
@@ -98,9 +103,9 @@ test('catalog is metadata, Athena reads the actual S3 data in the serverless lak
   assert.ok(event.edges.some((e) => e.from === 'workflow' && e.to === 'etl' && e.kind === 'event'));
 });
 
-test('ten comparisons contain every dimension for both services', () => {
-  assert.equal(comparisons.length, 10);
-  assert.equal(new Set(comparisons.map((c) => c.id)).size, 10);
+test('all comparisons contain every dimension for both services', () => {
+  assert.equal(comparisons.length, 12);
+  assert.equal(new Set(comparisons.map((c) => c.id)).size, comparisons.length);
   for (const c of comparisons) {
     assert.ok(serviceMap[c.a]);
     assert.ok(serviceMap[c.b]);

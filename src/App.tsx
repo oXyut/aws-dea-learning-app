@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Workflow,
+  ListChecks,
   BookOpen,
   GitCompareArrows,
   GraduationCap,
@@ -15,6 +16,7 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react';
+import { AdvancedPractice } from './components/AdvancedPractice';
 import { categories, serviceMap } from './data/services';
 import { patterns } from './data/patterns';
 
@@ -22,7 +24,7 @@ import { ServiceExplorer, ServiceDialog, CompareView, QuizView } from './compone
 
 import { Diagram, ServiceIcon, colorFor, icons } from './components/Diagram';
 
-type View = 'patterns' | 'services' | 'compare' | 'quiz';
+type View = 'patterns' | 'services' | 'compare' | 'quiz' | 'advanced';
 export default function App() {
   const [view, setView] = useState<View>('patterns');
   const [quizIndex, setQuizIndex] = useState(0);
@@ -94,10 +96,11 @@ export default function App() {
               },
               {
                 id: 'quiz',
-                label: 'シナリオで考える',
+                label: '基礎シナリオ',
                 en: 'Scenario practice',
                 icon: GraduationCap,
               },
+              { id: 'advanced', label: '応用シナリオ', en: 'Applied practice', icon: ListChecks },
             ] as const
           ).map((item) => (
             <button
@@ -163,7 +166,9 @@ export default function App() {
                   ? 'Service explorer'
                   : view === 'compare'
                     ? 'Compare services'
-                    : 'Scenario practice'}
+                    : view === 'advanced'
+                      ? 'Applied practice'
+                      : 'Scenario practice'}
             </span>
           </div>
           <span className="exam-badge">
@@ -181,7 +186,9 @@ export default function App() {
                     ? 'サービスを知る。役割が見える。'
                     : view === 'compare'
                       ? '似ているサービス、選ぶ理由は違う。'
-                      : '要件を読んで、構成を選ぶ。'}
+                      : view === 'advanced'
+                        ? '条件を見抜き、判断を深める。'
+                        : '要件を読んで、構成を選ぶ。'}
               </h1>
               <span className="edition">DEA-C01 LEARNING GUIDE</span>
             </div>
@@ -192,7 +199,9 @@ export default function App() {
                   ? 'できることだけでなく、向いていない用途まで。データ基盤の中での役割を確かめましょう。'
                   : view === 'compare'
                     ? 'キーワードを丸暗記せず、利用頻度・処理方式・運用負荷から判断しましょう。'
-                    : '実際の試験問題ではなく、サービスの選択理由を考えるためのオリジナルシナリオです。'}
+                    : view === 'advanced'
+                      ? '運用・権限・データの寿命まで。20のオリジナルシナリオで、選ぶ理由と選ばない理由を確かめましょう。'
+                      : '実際の試験問題ではなく、サービスの選択理由を考えるためのオリジナルシナリオです。'}
             </p>
           </div>
           <div className="category-strip">
@@ -208,19 +217,31 @@ export default function App() {
           </div>
           {view === 'patterns' ? (
             <>
+              <div className="applied-banner">
+                <div>
+                  <span className="eyebrow">TAKE THE NEXT STEP</span>
+                  <strong>つながりを理解したら、運用と設計の判断へ。</strong>
+                  <p>
+                    データの保持、処理の遅延、細かな権限。条件が変わったときの選び方を学びます。
+                  </p>
+                </div>
+                <button className="secondary-button" onClick={() => navigate('advanced')}>
+                  応用20シナリオへ <ArrowUpRight size={16} />
+                </button>
+              </div>
               <div className="section-heading">
                 <h2>
                   <Workflow size={18} />
                   アーキテクチャを探索
                 </h2>
                 <span>
-                  8 patterns <i /> ノードを選んで役割を確認
+                  {patterns.length} patterns <i /> ノードを選んで役割を確認
                 </span>
               </div>
               <div className="workspace">
                 <section className="pattern-list" aria-label="アーキテクチャパターン">
                   <div className="list-heading">
-                    PATTERNS <span>08</span>
+                    PATTERNS <span>{String(patterns.length).padStart(2, '0')}</span>
                   </div>
                   {patterns.map((p, i) => (
                     <button
@@ -382,6 +403,17 @@ export default function App() {
                       <p>{pattern.exam}</p>
                     </section>
                   </div>
+                  {pattern.sources && (
+                    <div className="lesson-sources">
+                      <span>この構成の公式資料</span>
+                      {pattern.sources.map((source) => (
+                        <a key={source.url} href={source.url} target="_blank" rel="noreferrer">
+                          {source.title}
+                          <ExternalLink size={12} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -393,7 +425,7 @@ export default function App() {
               onSelect={setComparisonId}
               onOpen={setServiceId}
             />
-          ) : (
+          ) : view === 'quiz' ? (
             <QuizView
               index={quizIndex}
               setIndex={setQuizIndex}
@@ -402,7 +434,10 @@ export default function App() {
               onPattern={openPattern}
               onOpen={setServiceId}
             />
-          )}
+          ) : null}
+          <div hidden={view !== 'advanced'}>
+            <AdvancedPractice onOpen={setServiceId} onPattern={openPattern} />
+          </div>
           <footer className="page-footer">
             <span>
               DEA Flow Lab <i /> サービスを覚える。その先へ。

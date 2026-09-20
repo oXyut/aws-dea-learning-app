@@ -18,7 +18,7 @@ Pagesのパスは `actions/configure-pages` の出力からViteの `BASE_PATH` �
 
 ```sh
 BASE_PATH=/aws-dea-learning-app/ npm run build
-npm run preview
+BASE_PATH=/aws-dea-learning-app/ npm run preview
 ```
 
 この場合は `http://127.0.0.1:4173/aws-dea-learning-app/` を開きます。
@@ -53,12 +53,13 @@ npm run format # ソース整形
 
 ## できること
 
-- **8構成の探索**：Serverless Data Lake、Batch Analytics、Streaming Analytics、Streaming Data Lake、Data Warehouse、CDC、Big Data Processing、Event Driven Pipeline。
+- **14構成の探索**：Serverless Data Lake、Batch Analytics、Streaming Analytics、Streaming Data Lake、Data Warehouse、CDC、Big Data Processing、Event Driven Pipelineに加え、定期API収集、Firehose形式変換、PII検出後の処理、Lambda＋EFS、SaaS取り込み、Redshiftデータ共有。
 - **動くデータフロー**：実データ・メタデータ・制御イベントを色と線種で区別。再生・停止、ノード選択、ステップ解説。
-- **35サービスの解説**：仕様指定の33サービス／機能と、QuickSight・Managed Service for Apache Flink。主要9サービスには追加解説。
-- **サービス検索**：名前・用途・キーワード検索、8カテゴリの絞り込み。詳細から関連サービス・比較・構成へ移動。
-- **10組の比較**：用途、データ量、リアルタイム性、サーバーレス、運用、SQL、スケール、コスト、適する用途、不適な用途。
+- **40サービスの解説**：既存35サービスにEFS・EKS・Scheduler・Parameter Store・AppFlowを追加。主要9サービスの基礎説明に加え、公式出典付きの応用解説47項目を追加。
+- **サービス検索**：名前・用途・キーワード・詳細解説の本文検索、8カテゴリの絞り込み。詳細から関連サービス・比較・構成へ移動。
+- **12組の比較**：用途、データ量、リアルタイム性、サーバーレス、運用、SQL、スケール、コスト、適する用途、不適な用途。Secrets Manager対Parameter Store、S3対EFSの比較を追加。
 - **10問の独自シナリオ**：空欄形式、単一選択、4候補すべての判断理由、構成図への復習導線、再挑戦。
+- **20問の応用シナリオ**：運用・権限・ライフサイクルの判断を学ぶ独自問題。単一／複数選択、全選択肢の解説、公式資料、関連サービス・構成への導線。複数選択は正解の集合が一致した場合のみ正解。
 - **アクセシビリティ**：キーボード操作、ネイティブdialogのフォーカス制御・Escape、本文スキップ、動きを抑える設定への対応。
 - **レスポンシブ**：PC主体。小さな画面ではナビゲーションを開閉し、図と比較表は領域内で横スクロール。
 
@@ -73,12 +74,14 @@ src/
   App.tsx                      ナビゲーション・アーキテクチャ探索・状態
   components/
     Diagram.tsx                接続線とサービスノードの描画
-    LearningViews.tsx           サービス詳細・比較・シナリオ
+    LearningViews.tsx           サービス詳細・比較・基礎シナリオ
+    AdvancedPractice.tsx       応用シナリオ・複数選択の採点と復習
   data/
     services.ts                サービス、カテゴリ、連携、公式資料
     patterns.ts                ノード、エッジ、役割、ステップ
     comparisons.ts             比較軸と10組の比較
-    quizzes.ts                 問題・選択肢・理由・対応構成
+    quizzes.ts                 基礎問題・選択肢・理由・対応構成
+    advancedQuizzes.ts         応用20問・判断理由・公式根拠・採点
   styles.css                   テーマとレスポンシブ表示
   main.tsx                     エントリーポイント
 tests/content.test.ts          参照整合性と重要な教育上の制約
@@ -110,4 +113,15 @@ spec.md                        元の仕様書
 
 ## AWS公式アイコン
 
-構成図・サービス一覧・詳細画面に、[AWS Architecture Icons](https://aws.amazon.com/architecture/icons/) の2026年7月31日版を使用しています。元の色・形を変更せず、SVGを同梱しています。出典とファイルの対応は [ATTRIBUTION.md](public/aws-icons/ATTRIBUTION.md)、元ファイル名とハッシュは [manifest.json](public/aws-icons/manifest.json) を参照してください。35サービス中34サービスに対応し、今回の配布物に単独アイコンがないQuickSightは汎用アイコンを使用しています。
+構成図・サービス一覧・詳細画面に、[AWS Architecture Icons](https://aws.amazon.com/architecture/icons/) の2026年7月31日版を使用しています。元の色・形を変更せず、SVGを同梱しています。出典とファイルの対応は [ATTRIBUTION.md](public/aws-icons/ATTRIBUTION.md)、元ファイル名とハッシュは [manifest.json](public/aws-icons/manifest.json) を参照してください。40サービス中39サービスに対応し、今回の配布物に単独アイコンがないQuickSightは汎用アイコンを使用しています。
+
+## 応用教材の範囲
+
+20の知識テーマと教材への対応は [教材対応表](docs/learning-scope.md) に記載しています。サービス名だけでなく、誤答になりやすい設定や条件の違いも扱います。
+
+- SQSの保持期限切れとDLQへの移動は別の仕組みです。
+- Glueの旧版向けDPU計算式は現行ワーカーへ一般化しません。
+- LambdaのJSON整形とFirehoseのParquet変換を分けます。
+- Kinesisの遅延は、読取帯域・キーの偏り・バッチ並列性・関数の同時実行制限を切り分けます。
+
+教材・確認問題は独自に作成しており、元の公式問題文・選択肢や個人の受験記録は公開リポジトリに含めていません。知識テーマの対応は本試験全体の網羅や合格を保証するものではありません。

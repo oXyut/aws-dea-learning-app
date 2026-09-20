@@ -28,7 +28,18 @@ export function ServiceExplorer({ onOpen }: { onOpen: (id: string) => void }) {
   const filtered = services.filter(
     (s) =>
       (category === 'all' || s.category === category) &&
-      [s.name, s.short, s.what, s.use, s.keywords.join(' ')]
+      [
+        s.name,
+        s.short,
+        s.what,
+        s.use,
+        s.cannot,
+        s.alternatives,
+        s.exam,
+        s.trap,
+        s.keywords.join(' '),
+        ...(s.deep || []).map((d) => `${d.title} ${d.text}`),
+      ]
         .join(' ')
         .toLocaleLowerCase()
         .includes(query),
@@ -40,7 +51,7 @@ export function ServiceExplorer({ onOpen }: { onOpen: (id: string) => void }) {
           <Search size={18} />
           <input
             aria-label="サービスを検索"
-            placeholder="サービス名・キーワードで探す"
+            placeholder="サービス・機能・判断のキーワードで探す"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -220,6 +231,11 @@ export function ServiceDialog({
               <section className="dialog-section" key={d.title}>
                 <h3>{d.title}</h3>
                 <p>{d.text}</p>
+                {d.source && (
+                  <a className="lesson-source" href={d.source} target="_blank" rel="noreferrer">
+                    この解説の公式資料 <ExternalLink size={12} />
+                  </a>
+                )}
               </section>
             ))}
             <section className="dialog-section">

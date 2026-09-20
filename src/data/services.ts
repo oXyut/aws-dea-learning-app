@@ -24,7 +24,7 @@ export interface Service {
   exam: string;
   trap: string;
   source: string;
-  deep?: { title: string; text: string }[];
+  deep?: { title: string; text: string; source?: string }[];
 }
 const docs = (path: string) => `https://docs.aws.amazon.com/${path}`;
 export const services: Service[] = [
@@ -57,6 +57,16 @@ export const services: Service[] = [
         title: 'パーティションと小さなファイル',
         text: 'WHERE句でよく使う日付などをパーティションキーにします。高カーディナリティな分割や大量の小さなファイルはオーバーヘッドを増やします。',
       },
+      {
+        title: '分析できる期間と保管だけの期間を分ける',
+        text: '直近はStandard、低頻度でも即時取得が必要な履歴はStandard-IAなどを検討します。IAは取得料金と最低保管期間も計算に入れます。復元待ちが許されない分析対象を、Flexible RetrievalやDeep Archiveへ早く移しすぎないようにします。',
+        source: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html',
+      },
+      {
+        title: 'TransitionとExpirationは別の操作',
+        text: 'LifecycleのTransitionは保存クラスの移行、Expirationは保存期限後の削除です。例として、オンライン分析期間終了後にアーカイブし、保存義務終了後に削除する2段階を設定します。バージョニング有効時は現行版の期限切れだけで全版が消えるわけではなく、非現行版の削除も設計します。',
+        source: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html',
+      },
     ],
   },
   {
@@ -78,6 +88,20 @@ export const services: Service[] = [
     exam: '保管期間だけでなく、取り出し時間・最低保管期間・取得料金を照合します。',
     trap: 'Glacierはすべて取得に数時間かかる、という判断は誤り。クラスごとに異なります。',
     source: docs('AmazonS3/latest/userguide/storage-class-intro.html'),
+    deep: [
+      {
+        title: '復元時間からクラスを選ぶ',
+        text: 'Instant Retrievalはミリ秒のGET、Flexible Retrievalは通常のStandard復元で3〜5時間、Bulkで5〜12時間です。Expeditedは小さな対象なら通常1〜5分ですが、容量の確保も考慮します。Deep ArchiveにはExpeditedがなく、通常のStandardで12時間以内、Bulkで48時間以内が目安です。大量データではさらに時間がかかるため、これらを一律の完了保証と考えません。',
+        source:
+          'https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects-retrieval-options.html',
+      },
+      {
+        title: '月額保管料だけで決めない',
+        text: '最低保管期間はInstant / Flexibleで90日、Deep Archiveで180日です。短期削除や取り出し・一時的な復元コピーにも費用が発生し得ます。年単位で保管し復元を長く待てる履歴と、低頻度でも今すぐ読みたい履歴では適したクラスが異なります。毎年大量の履歴をスキャンする場合も、取り出す総量と頻度で総費用を比較します。Instantは復元待ちをなくしますが取得料金があるため、即時分析する全履歴を無条件にInstantへ移すのではなく、Standard / Standard-IA等も比較します。',
+        source:
+          'https://docs.aws.amazon.com/AmazonS3/latest/userguide/glacier-storage-classes.html',
+      },
+    ],
   },
   {
     id: 'lakeformation',
@@ -94,10 +118,28 @@ export const services: Service[] = [
     integrations: ['s3', 'catalog', 'athena'],
     alternatives:
       'IAMはAWS APIやリソースの権限。Data Catalogはスキーマを記録。Lake Formationは対応エンジンのデータアクセスを統制。',
-    keywords: ['fine-grained access', 'LF-Tags', 'governance'],
+    keywords: [
+      'fine-grained access',
+      'LF-Tags',
+      'governance',
+      'cell-level security',
+      'data filter',
+    ],
     exam: '部門ごとに列を隠したい、テーブル単位でデータ共有したいなら候補です。',
     trap: 'Lake Formationを設定しても、IAM・S3・KMSの必要権限が不要になるわけではありません。',
     source: docs('lake-formation/latest/dg/what-is-lake-formation.html'),
+    deep: [
+      {
+        title: '行・列・セルをデータフィルターで制御',
+        text: 'Data Catalogに売上テーブルを登録し、Lake Formationのデータフィルターで担当地域の行だけ、必要な列だけをSELECT許可します。行条件と列指定を組み合わせるのがセルレベル制御です。対応する分析エンジンとデータ型の制限を確認して適用します。',
+        source: 'https://docs.aws.amazon.com/lake-formation/latest/dg/data-filtering.html',
+      },
+      {
+        title: 'カタログの閲覧許可だけでは不足',
+        text: 'Catalogはデータの場所と構造を管理しますが、テーブル定義を見せる権限だけで利用者別の検索結果を制御できるわけではありません。Lake Formationのフィルター付きSELECTは読み取り結果を制限する仕組みで、保存済みデータをマスキングして書き換える処理とは異なります。',
+        source: 'https://docs.aws.amazon.com/lake-formation/latest/dg/data-filtering.html',
+      },
+    ],
   },
   {
     id: 'glue',
@@ -116,7 +158,15 @@ export const services: Service[] = [
     integrations: ['s3', 'catalog', 'redshift', 'stepfunctions'],
     alternatives:
       'EMRはフレームワークや実行環境の自由度が高い。Lambdaは短時間で小さなイベント処理向け。',
-    keywords: ['serverless ETL', 'Spark', 'job bookmarks', 'schema discovery'],
+    keywords: [
+      'serverless ETL',
+      'Spark',
+      'job bookmarks',
+      'schema discovery',
+      'DPU',
+      'workerUtilization',
+      'Observability',
+    ],
     exam: '運用を抑えた大規模なデータ変換、スキーマ発見、カタログ統合が必要なら候補です。',
     trap: 'CrawlerはETLをしません。ジョブブックマークは出力先の重複を自動的にすべて排除する仕組みでもありません。',
     source: docs('glue/latest/dg/what-is-glue.html'),
@@ -128,6 +178,21 @@ export const services: Service[] = [
       {
         title: '処理が遅いときの判断',
         text: 'まずデータの偏り、過剰なシャッフル、小さなファイル、読み取り範囲を確認。push-down predicateやパーティションの活用も検討します。',
+      },
+      {
+        title: 'DPU容量はジョブの実測から決める',
+        text: 'Job run monitoringと実行履歴で、所要時間・ワーカー数・読み書き量・CPU・メモリ・データの偏りを比較します。プロファイル用メトリクスや、Glue 4.0以降のSparkジョブで利用できるObservability metricsを有効にし、CloudWatch上のworkerUtilizationやskewnessから、容量不足か処理の偏りかを切り分けます。ログ検索だけでは必要容量の根拠になりません。',
+        source: 'https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html',
+      },
+      {
+        title: '増やしたDPUが性能改善につながるか',
+        text: '同じ代表データを使い、ワーカー構成変更前後の実行時間と費用を比較します。CPUやメモリ不足には構成変更、偏りや小さなファイルにはデータ・処理設計の改善が先です。対応ジョブではAuto Scalingと最大ワーカー数も検討し、未使用容量を減らします。',
+        source: 'https://docs.aws.amazon.com/glue/latest/dg/auto-scaling.html',
+      },
+      {
+        title: '古い容量計算式の適用範囲',
+        text: '公式の「Monitoring for DPU capacity planning」にある例はGlue 0.9 / 1.0向けです。DPU数とexecutor数の古い計算式を、現行ワーカータイプへそのまま流用しません。現行版では利用するワーカー、メトリクス、Auto Scalingの動きを確認します。',
+        source: 'https://docs.aws.amazon.com/glue/latest/dg/monitor-debug-capacity.html',
       },
     ],
   },
@@ -291,7 +356,17 @@ export const services: Service[] = [
     use: '複数データソースを統合した継続的な売上分析や部門横断BI。',
     integrations: ['s3', 'glue', 'spectrum', 'quicksight'],
     alternatives: '散発的なS3クエリはAthena。Sparkの独自処理はEMR。',
-    keywords: ['data warehouse', 'complex joins', 'BI', 'COPY'],
+    keywords: [
+      'data warehouse',
+      'complex joins',
+      'BI',
+      'COPY',
+      'UNLOAD',
+      'SUPER',
+      'PartiQL',
+      'datashare',
+      'Serverless',
+    ],
     exam: '継続的な分析、複雑なSQL、統合済みデータモデルが必要なら候補です。',
     trap: 'Redshiftは必ずクラスタ管理が必要、ではありません。Serverlessも含めて要件と照合します。',
     source: docs('redshift/latest/mgmt/welcome.html'),
@@ -303,6 +378,26 @@ export const services: Service[] = [
       {
         title: '性能の判断軸',
         text: 'クエリ計画、分散・ソート、データの偏り、WLM、マテリアライズドビューを検討。単にデータが大きいだけで選ばず、ワークロードを見ます。',
+      },
+      {
+        title: '直近はDWH、履歴はUNLOADでS3へ',
+        text: 'UNLOADはSELECT結果をS3に書き出す操作です。対象期間をParquetで出力し、件数・内容と外部テーブルでの参照を検証してから、DWH側の古い行を別途DELETEします。UNLOADだけでは元の行は削除されません。履歴を分析する間は読み取り可能なS3クラスに置き、分析期間終了後のアーカイブをLifecycleで設計します。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html',
+      },
+      {
+        title: '複製せずに部門へデータ共有',
+        text: 'Producerがdatashareへテーブル等を登録し、Consumerが別の計算環境から共有データを利用します。UNLOAD / COPYで複製する方式や、時点コピーであるスナップショットとは異なり、コミット済みの更新を新しいトランザクションから参照できます。分析専用Consumerには必要な読み取り権限だけを与えます。現行機能には書き込み共有もあるため、共有は常に読み取り専用とは限りません。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/dg/datashare-overview.html',
+      },
+      {
+        title: '断続的なConsumerにはServerlessも検討',
+        text: '共有先にRedshift Serverlessを使うと、Producerと計算負荷を分離しながら、断続的な分析を実行できます。計算利用量とストレージ等の料金は別に考え、予算に合わせて容量・利用上限を設定します。複製の同期ジョブを減らせますが、常に最安になると決めつけません。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/mgmt/serverless-billing.html',
+      },
+      {
+        title: 'ネストJSONをSUPERとPartiQLで分析',
+        text: 'SUPER型はオブジェクトや配列を含む半構造化データを保持します。COPYやJSON_PARSEで取り込み、PartiQLで属性の参照や配列の展開を行い、通常の列と一緒にSQL分析できます。先に全項目を固定列へ展開する必要はありません。VARCHARへ保存するだけの方法と比べ、ネスト構造を型として扱える点が判断軸です。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/dg/super-overview.html',
       },
     ],
   },
@@ -321,6 +416,19 @@ export const services: Service[] = [
     exam: '既存RedshiftのテーブルとS3の履歴をJOINする要件が手掛かりです。',
     trap: '外部テーブルを作ってもS3データがRedshiftにすべてコピーされるわけではありません。',
     source: docs('redshift/latest/dg/c-using-spectrum.html'),
+    deep: [
+      {
+        title: 'S3の履歴を外部テーブルとして残す',
+        text: '履歴のスキーマとS3の場所をCatalogの外部テーブルに定義し、Redshift内の直近データとJOINします。SpectrumはS3の実データを読みます。保持だけが目的になった後にアーカイブへ移す設計なら、分析用データと保存義務用データを分けて管理できます。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/dg/c-spectrum-overview.html',
+      },
+      {
+        title: 'アーカイブ直後も同じSQLで読めるとは限らない',
+        text: 'Flexible Retrieval / Deep Archiveの未復元オブジェクトは、そのままGETできません。復元待ちがあるため、即時分析対象の移行先として選ばないことが基本です。再分析時は復元と分析エンジンの対応を確認し、必要なら読み取り可能なクラスの別領域にコピーして外部テーブルを参照させます。',
+        source:
+          'https://docs.aws.amazon.com/AmazonS3/latest/userguide/restoring-objects-retrieval-options.html',
+      },
+    ],
   },
   {
     id: 'emr',
@@ -368,6 +476,19 @@ export const services: Service[] = [
     exam: 'テキスト検索や検索インデックスが要件の中心なら候補です。',
     trap: 'ログ分析というだけで選ばず、即時検索・保存期間・費用を確認します。',
     source: docs('opensearch-service/latest/developerguide/what-is.html'),
+    deep: [
+      {
+        title: '文書と画像の検索を組み立てる',
+        text: '画像本体や原本はS3に保存し、タイトル・タグ・抽出済み本文など検索対象の情報と、S3の参照先をOpenSearchのドキュメントへ登録します。画像の意味や文字は保存しただけでは検索できないので、必要に応じて事前に抽出します。検索で候補を絞り、原本はS3から取得する構成です。',
+        source:
+          'https://docs.aws.amazon.com/opensearch-service/latest/developerguide/search-example.html',
+      },
+      {
+        title: 'AthenaやRedshiftとの選び分け',
+        text: 'キーワードの全文検索、関連度、検索条件で文書を素早く探す用途には検索インデックスが適します。大量ファイルをSQLで集計するAthenaや、業務テーブルの複雑な集計を行うRedshiftとは、必要な検索体験と更新方法で比較します。',
+        source: 'https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html',
+      },
+    ],
   },
   {
     id: 'kinesis',
@@ -385,7 +506,16 @@ export const services: Service[] = [
     use: 'クリックストリームやIoTデータの低遅延処理・再処理。',
     integrations: ['lambda', 'firehose', 'flink'],
     alternatives: '配信を簡単にしたいならFirehose。Kafka互換が必須ならMSK。単純な作業キューはSQS。',
-    keywords: ['replay', 'multiple consumers', 'partition key', 'real-time'],
+    keywords: [
+      'replay',
+      'multiple consumers',
+      'partition key',
+      'real-time',
+      'IteratorAge',
+      'IteratorAgeMilliseconds',
+      'ParallelizationFactor',
+      'enhanced fan-out',
+    ],
     exam: '低遅延で複数の処理を走らせ、あとからイベントを再読したいなら有力です。',
     trap: 'レコードの重複を想定し、コンシューマー側を冪等に設計します。',
     source: docs('streams/latest/dev/introduction.html'),
@@ -397,6 +527,31 @@ export const services: Service[] = [
       {
         title: 'Streams → Firehose',
         text: 'Kinesisで保持・複数消費を行い、FirehoseでバッファリングしてS3へ配信する組み合わせも可能です。役割が違うので併用できます。',
+      },
+      {
+        title: 'IteratorAgeで消費の遅れを診断',
+        text: 'LambdaのIteratorAgeが増えたら、関数のDuration・Errors・ThrottlesとKinesisの読取制限を併せて確認します。シャード数は独立して処理できる単位を増やし、ParallelizationFactorは1シャード当たりの並行バッチ数を1〜10で調整します。パーティションキー単位の順序を保つため、単一キーへの偏りも見ます。',
+        source: 'https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html',
+      },
+      {
+        title: '拡張ファンアウトと同時実行数は違う制約',
+        text: 'Enhanced fan-outはコンシューマーごとに専用の読取帯域を確保し、標準読取の帯域競合を減らします。一方、Lambdaが同時バッチ数を処理できずスロットリングされるなら、予約済み同時実行数やアカウントクォータの調整も有効です。帯域・シャード並列性・関数の処理時間・同時実行制限を混同しません。',
+        source: 'https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html',
+      },
+      {
+        title: '似た名前の遅延メトリクスを区別する',
+        text: 'LambdaのIteratorAgeと、KinesisのGetRecords.IteratorAgeMillisecondsは異なる名前空間のメトリクスです。後者のシャード単位の名前はIteratorAgeMillisecondsで、GetRecordsが取得した最後のレコードの古さを表します。どのコンシューマー・シャード・関数の遅延かを見て、原因と改善策を結び付けます。',
+        source: docs('streams/latest/dev/monitoring-with-cloudwatch.html'),
+      },
+      {
+        title: '初期化時間と継続的な処理能力を分ける',
+        text: 'LambdaのProvisioned Concurrencyは実行環境を事前に初期化し、コールドスタートを減らします。読取帯域やイベントソースのシャード内並列性を直接増やす機能ではありません。初期化ではなく長い処理時間や読取競合で遅れているなら、関数処理・ParallelizationFactor・拡張ファンアウトなどを確認します。',
+        source: docs('lambda/latest/dg/provisioned-concurrency.html'),
+      },
+      {
+        title: '容量モードの切り替えだけで決めない',
+        text: 'KinesisのOn-demandは容量管理をサービスに任せ、Provisionedはシャード数を管理します。容量モードを変えただけでLambdaのコードが速くなったり、ParallelizationFactorや同時実行数が自動的に適正化されたりするわけではありません。まずどの段階で追いついていないかを計測してから変更します。',
+        source: docs('streams/latest/dev/how-do-i-size-a-stream.html'),
       },
     ],
   },
@@ -416,6 +571,13 @@ export const services: Service[] = [
     exam: 'イベントを蓄積先に配信することが目的で、配信運用を減らしたいなら候補です。',
     trap: '旧名称のKinesisに引っ張られず、Streamsの保持・再読とFirehoseの配信を区別します。',
     source: docs('firehose/latest/dev/what-is-this-service.html'),
+    deep: [
+      {
+        title: 'Lambda整形とParquet変換の分担',
+        text: 'Firehoseから呼ぶLambdaは、必要に応じてログをJSONへ整形します。その後、Firehoseの形式変換がGlue Data Catalogのスキーマを使いJSONをParquet / ORCへ変換し、S3へ配信します。Lambdaが直接Parquetを書き出す構成とは役割が異なり、マネージド変換を使う方が自作処理を減らせます。',
+        source: 'https://docs.aws.amazon.com/firehose/latest/dev/record-format-conversion.html',
+      },
+    ],
   },
   {
     id: 'msk',
@@ -451,10 +613,45 @@ export const services: Service[] = [
     use: '非同期ジョブの受付、負荷の平準化。',
     integrations: ['lambda', 'sns', 'eventbridge'],
     alternatives: 'イベント履歴を複数コンシューマーで再読するならKinesis。',
-    keywords: ['decoupling', 'queue', 'visibility timeout', 'DLQ'],
+    keywords: [
+      'decoupling',
+      'queue',
+      'visibility timeout',
+      'DLQ',
+      'MessageRetentionPeriod',
+      'ReceiveMessage',
+      'DeleteMessage',
+      'PurgeQueue',
+    ],
     exam: 'ワーカーがメッセージを受けて処理する作業分配なら候補です。',
     trap: 'Standardキューでは重複・順序の入れ替わりを想定。FIFOでも外部副作用には冪等性が必要です。',
     source: docs('AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html'),
+    deep: [
+      {
+        title: '受信は削除ではない',
+        text: 'ReceiveMessageで受信するとメッセージは一時的に不可視になります。処理成功後はreceipt handleを使うDeleteMessageで削除します。削除せず可視性タイムアウトを迎えると再び受信可能になります。再配信を想定し、同じ処理を重複実行しても壊れない設計にします。',
+        source:
+          'https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html',
+      },
+      {
+        title: '保持期間・可視性・配信遅延を分ける',
+        text: 'MessageRetentionPeriodは保存可能期間で、既定4日・最長14日です。期限切れのメッセージは削除されます。長い停止に備えるなら停止時間と再処理時間を含めて設定します。可視性タイムアウトは受信後の再表示まで、DelaySecondsは最初の配信を遅らせる設定で、どちらも保持期限を延ばしません。',
+        source:
+          'https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html',
+      },
+      {
+        title: 'DLQは保持期限切れの救済先ではない',
+        text: 'Redrive policyのmaxReceiveCountに基づき、繰り返し受信される未処理メッセージをDLQへ分離します。受信されないまま保持期限が切れたメッセージが、自動的にDLQへ避難するわけではありません。StandardキューではDLQでも元の送信時刻を基準に期限を判定するため、DLQの保持期間は元キューより長く設定します。',
+        source:
+          'https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html',
+      },
+      {
+        title: 'PurgeQueueはキュー全体を空にする',
+        text: 'PurgeQueueは待機中と処理中のメッセージを削除し、削除済みデータは復元できません。最大60秒かかり、処理中に送信されたメッセージも削除されることがあります。正常処理後に1件を消すDeleteMessageや、失敗分だけ分離するDLQの代わりに使いません。',
+        source:
+          'https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_PurgeQueue.html',
+      },
+    ],
   },
   {
     id: 'sns',
@@ -572,6 +769,16 @@ export const services: Service[] = [
         title: '実行時間と状態',
         text: '長時間の待機や複数の分岐をコード内で管理せず、Step Functionsへ委ねます。永続状態はDynamoDBやS3などに保存します。',
       },
+      {
+        title: '共有ファイルと実行環境の一時領域',
+        text: '/tmpは各実行環境の一時ストレージで、複数Lambdaから同じファイルを継続共有する保存先にはなりません。NFSファイル共有が必要ならEFSをアクセスポイント経由でマウントし、VPC接続・ネットワーク・IAM / POSIX権限を整えます。EBSをLambdaへ直接アタッチする構成は使いません。',
+        source: 'https://docs.aws.amazon.com/lambda/latest/dg/configuration-filesystem-efs.html',
+      },
+      {
+        title: 'cron処理をイベント起動へ移す',
+        text: '短時間のPython処理なら、EventBridge Schedulerが指定時刻にLambdaを起動し、Lambdaが外部APIから取得してS3へ保存する構成にできます。実行ロールに必要なS3書込権限を与え、タイムアウト、再試行、重複実行を設計します。常時稼働のEC2を用意する運用を減らせます。',
+        source: 'https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html',
+      },
     ],
   },
   {
@@ -663,10 +870,36 @@ export const services: Service[] = [
     use: 'Glueジョブに必要なS3・Catalog・KMS権限だけを付与。',
     integrations: ['s3', 'glue', 'kms', 'lakeformation'],
     alternatives: 'データレイクの細粒度データ権限はLake Formationも活用。',
-    keywords: ['least privilege', 'role', 'explicit deny'],
+    keywords: [
+      'least privilege',
+      'role',
+      'explicit deny',
+      'GetObject',
+      'object ARN',
+      'PassRole',
+      'service role',
+    ],
     exam: 'アクセス拒否ではIAMだけでなくリソースポリシーや明示的Denyも確認します。',
     trap: 'Allowを1つ追加しても明示的Denyを上書きできません。',
     source: docs('IAM/latest/UserGuide/introduction.html'),
+    deep: [
+      {
+        title: 'S3本文を読む最小権限',
+        text: 'Lambdaの実行ロールで本文を読むなら、Actionはs3:GetObject、Resourceは対象オブジェクトのARNです。例としてarn:aws:s3:::learning-data/incoming/*を指定します。バケットARNだけではオブジェクト権限になりません。s3:GetObjectAttributesは属性の取得で、本文の取得を代替しません。ListBucketが必要ならバケットARNを対象に別途許可します。',
+        source: 'https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html',
+      },
+      {
+        title: '狭いAllowを追加するだけでは権限は狭まらない',
+        text: '既存のs3:*やResource: *によるAllowを残したまま、特定プレフィックスへのAllowを追加しても、広い許可は残ります。不要な許可を削除・置換し、他のポリシーも合わせて評価します。明示的Denyや境界・SCPなどがあれば、Allowだけではアクセスできません。',
+        source:
+          'https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html',
+      },
+      {
+        title: 'Glueサービスロールの3つの関係',
+        text: 'まずglue.amazonaws.comがsts:AssumeRoleできる信頼ポリシーを設定します。次に入力S3のGetObjectや出力のPutObjectなど必要範囲のポリシーをそのロールへ付け、ジョブの実行ロールとして選びます。ジョブ作成者には対象ロールのiam:PassRoleも必要です。IAMユーザーの固定アクセスキーをスクリプトへ埋め込む必要はありません。',
+        source: 'https://docs.aws.amazon.com/glue/latest/dg/create-an-iam-role.html',
+      },
+    ],
   },
   {
     id: 'kms',
@@ -683,6 +916,18 @@ export const services: Service[] = [
     exam: '暗号化データにアクセスできないときは、データ権限とキー利用権限の両方を確認します。',
     trap: 'S3のGetObjectだけ許可しても、KMSキーの復号権限が不足すれば読めません。',
     source: docs('kms/latest/developerguide/overview.html'),
+    deep: [
+      {
+        title: 'SSE-KMSのS3ファイルをCOPYする',
+        text: 'RedshiftのCOPYはSSE-KMS暗号化されたS3データを取り込めます。COPYに使うIAMロールにはS3読取権限と対象キーのkms:Decryptを認め、KMSキーポリシー側でも利用を許可します。S3側の暗号化と、Redshift保存時の暗号化は別の設定です。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/dg/c_loading-encrypted-files.html',
+      },
+      {
+        title: 'SSE-Cやクライアント暗号化を同一視しない',
+        text: 'COPYではSSE-S3・SSE-KMSを利用でき、SSE-Cは対応していません。COPY / UNLOADのクライアント側暗号化は2026年4月30日にサポート終了と告知されています。旧説明に残る対称ルートキー方式を含め、現在の構成では使わずサーバー側暗号化を選びます。クライアント側KMS・非対称ルートキー方式も代替にはなりません。SSE-KMSではロールとKMS利用権限を整えます。',
+        source: 'https://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html',
+      },
+    ],
   },
   {
     id: 'secrets',
@@ -699,6 +944,19 @@ export const services: Service[] = [
     exam: 'コードにパスワードを埋め込まず、自動更新したい場合に候補です。',
     trap: 'ローテーション後に接続側が新しい値を取得できるよう設計します。',
     source: docs('secretsmanager/latest/userguide/intro.html'),
+    deep: [
+      {
+        title: '自動ローテーションはDB側の値も更新する',
+        text: 'Secrets ManagerでDBパスワードを保管し、対応するローテーション方式を構成します。ローテーションではSecretだけでなく接続先DBの認証情報も整合させ、アプリは更新後の値を取得します。Parameter StoreのSecureStringは暗号化保管できますが、それだけでDBパスワードの自動更新は行いません。',
+        source: 'https://docs.aws.amazon.com/secretsmanager/latest/userguide/rotating-secrets.html',
+      },
+      {
+        title: 'SQL ServerとIAM認証の適用範囲',
+        text: 'RDSのIAM DB認証はMariaDB・MySQL・PostgreSQLが対象で、SQL Serverへ同じ方式を適用できません。STSが発行するAWS API向けの一時認証情報も、SQL ServerのDBパスワードそのものではありません。SQL Serverのパスワード自動更新が必要なら、対応するSecrets Managerローテーションを検討します。',
+        source:
+          'https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html',
+      },
+    ],
   },
   {
     id: 'macie',
@@ -715,6 +973,19 @@ export const services: Service[] = [
     exam: 'S3内の個人情報を発見・分類したいなら候補です。',
     trap: '検出と防止は別。検出後のアクセス制御や修復の処理を組み合わせます。',
     source: docs('macie/latest/user/what-is-macie.html'),
+    deep: [
+      {
+        title: '検出を条件に既存のマスキング処理を起動',
+        text: 'MacieのFindingはEventBridgeのデフォルトイベントバスへ発行されます。sourceがaws.macie、detail-typeがMacie Findingのイベントから機密データ検出を絞り込み、LambdaやStep Functionsで既存マスキング処理を呼び出します。Macie自体が原本を書き換えるのではなく、Findingの対象S3情報を処理へ渡します。',
+        source:
+          'https://docs.aws.amazon.com/macie/latest/user/findings-monitor-events-eventbridge.html',
+      },
+      {
+        title: 'ファイル到着と検出完了は別のイベント',
+        text: 'S3 ObjectCreatedは到着したことを示すだけで、個人情報が見つかった証拠ではありません。検出結果を待って動くにはFindingを使います。Macieの検出には機密データ検出ジョブ等の設定が必要で、全アップロードが即時検査されるとは限りません。抑制ルールで自動アーカイブされたFindingはEventBridgeへ発行されない点も確認します。',
+        source: 'https://docs.aws.amazon.com/macie/latest/user/findings-publish-event-schemas.html',
+      },
+    ],
   },
   {
     id: 'quicksight',
@@ -748,6 +1019,158 @@ export const services: Service[] = [
     exam: '遅れて到着するイベントや時間窓の状態管理が必要なら候補です。',
     trap: '処理保証はソース・シンク・チェックポイントを含めて評価します。',
     source: docs('managed-flink/latest/java/what-is.html'),
+  },
+  {
+    id: 'efs',
+    name: 'Amazon Elastic File System',
+    short: 'Amazon EFS',
+    category: 'storage',
+    what: '複数の計算環境から共有できる、マネージドのNFSファイルストレージです。',
+    can: [
+      'LambdaやEC2・EKSから共有ファイルを読み書き',
+      'アクセスポイントでアプリごとのパス・POSIXユーザーを指定',
+    ],
+    cannot:
+      '実行環境内のRAMより低遅延な一時領域ではありません。ネットワーク越しのファイルアクセスです。',
+    use: '複数Lambdaが同じディレクトリやファイルを共有する処理。',
+    integrations: ['lambda', 'eks', 'datasync'],
+    alternatives:
+      'オブジェクトAPIで十分ならS3。一時的な計算用の領域はLambdaの/tmpやPodのemptyDir。',
+    keywords: ['NFS', 'POSIX', 'shared filesystem', 'access point'],
+    exam: '複数の実行環境から同じNFSファイルへアクセスする要件が判断材料です。',
+    trap: 'マウントするだけで全員が書けるわけではありません。ネットワークとIAM・POSIX権限を揃えます。',
+    source: 'https://docs.aws.amazon.com/efs/latest/ug/whatisefs.html',
+    deep: [
+      {
+        title: 'LambdaからNFSを共有する',
+        text: 'EFSのアクセスポイントを作り、LambdaのVPCサブネットからマウントターゲットへ接続できるようにします。セキュリティグループのNFS通信と、実行ロールのClientMount / 必要時ClientWrite、ディレクトリのPOSIX権限を確認します。複数の実行環境が同じ共有データを扱えます。',
+        source: 'https://docs.aws.amazon.com/lambda/latest/dg/configuration-filesystem-efs.html',
+      },
+      {
+        title: 'S3・EBS・/tmpとの境界',
+        text: 'NFSと共有ファイルの要件にはEFSを選びます。S3のネイティブAPIはオブジェクト操作、EBSはブロックストレージ、/tmpは実行環境ごとの一時領域です。現行LambdaにはAmazon S3 Filesという別のマウント機能もあるため、S3は一切マウントできないという暗記は避け、要求するファイル操作と対応機能で比較します。',
+        source: 'https://docs.aws.amazon.com/lambda/latest/dg/configuration-filesystem.html',
+      },
+    ],
+  },
+  {
+    id: 'eks',
+    name: 'Amazon Elastic Kubernetes Service',
+    short: 'Amazon EKS',
+    category: 'processing',
+    what: 'Kubernetesのコントロールプレーンをマネージドで提供し、Podでコンテナ処理を実行する基盤です。',
+    can: [
+      'コンテナ化したデータ処理をPodとして実行',
+      '要件に応じ一時ボリュームや永続ストレージを選択',
+    ],
+    cannot: 'EKSを使うだけでアプリの状態やPod内データが永続化されるわけではありません。',
+    use: '既存Kubernetesのデータ処理基盤やコンテナワークロード。',
+    integrations: ['efs', 's3', 'cloudwatch'],
+    alternatives:
+      '標準ETLならGlue。短いイベント処理はLambda。Kubernetes運用が不要なら構成を簡素化できます。',
+    keywords: ['Kubernetes', 'Pod', 'emptyDir', 'tmpfs', 'Memory'],
+    exam: '消えてよい一時データ、Pod外への共有不要、RAMに収まる、低遅延という条件ならメモリ上のemptyDirが候補です。',
+    trap: 'emptyDirはPod内のコンテナ間では共有できますが、Podを削除すると消えます。',
+    source: 'https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html',
+    deep: [
+      {
+        title: 'RAM上のemptyDirで計算の中間結果を扱う',
+        text: 'emptyDir.mediumをMemoryにすると、tmpfsというRAM上のファイル領域になります。ネットワークストレージを経由せず、再生成可能な小さな中間結果を高速に扱えます。書き込んだ量はメモリ消費として数えられるので、sizeLimitとコンテナのメモリ上限を設計します。',
+        source: 'https://kubernetes.io/docs/concepts/storage/volumes/#emptydir',
+      },
+      {
+        title: '永続化と共有の要件が変われば選び直す',
+        text: 'emptyDirはPodがノードから取り除かれると削除されますが、同じPod内のコンテナ再起動だけでは消えません。Pod間のNFS共有ならEFS等を検討します。MemoryDBはネットワーク越しのデータベース、DAXはDynamoDB向けキャッシュであり、Pod内の一時ファイル領域を置き換えるものではありません。',
+        source: 'https://kubernetes.io/docs/concepts/storage/volumes/#emptydir',
+      },
+    ],
+  },
+  {
+    id: 'scheduler',
+    name: 'Amazon EventBridge Scheduler',
+    short: 'Scheduler',
+    category: 'orchestration',
+    what: '一度だけ、またはcron / rate形式のスケジュールでAWS APIやサービスを起動します。',
+    can: ['タイムゾーンを指定して定期実行', 'Lambdaなどのターゲット起動と再試行・DLQの設定'],
+    cannot:
+      'Pythonスクリプト自体の実行エンジンでも、複雑な処理分岐のワークフローエンジンでもありません。',
+    use: '毎朝の外部API収集や定期メンテナンスをサーバー管理なしで起動。',
+    integrations: ['lambda', 'sqs', 'stepfunctions'],
+    alternatives:
+      '発生したイベントの振り分けはEventBridgeのイベントバス。複数工程の依存関係はStep Functions。',
+    keywords: ['cron', 'rate', 'timezone', 'scheduled invocation'],
+    exam: '時刻を契機に短いPython処理を動かすならScheduler + Lambdaを検討します。',
+    trap: '再試行で重複実行されてもよい設計にし、ターゲットを呼ぶ実行ロールも設定します。',
+    source: 'https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html',
+    deep: [
+      {
+        title: '定期収集の役割分担',
+        text: 'Schedulerのcronで時刻とタイムゾーンを決め、ターゲットをLambdaにします。LambdaがAPI呼び出し・変換・S3保存を担当します。分単位のスケジュール精度や柔軟な時間枠を考慮し、正確な秒での起動を前提にしません。',
+        source: 'https://docs.aws.amazon.com/scheduler/latest/UserGuide/schedule-types.html',
+      },
+      {
+        title: 'EC2やCloudShellとの比較',
+        text: '既存cronをEC2へ移すとOS更新や稼働管理が残ります。CloudShellは対話操作用で、定期バッチの常設実行環境には向きません。短い処理をLambdaへ移し、ターゲットへの配信失敗に対する再試行とDLQをSchedulerに設定すると、サーバー維持の運用を減らせます。Lambda実行中の失敗はLambda側でも別途扱います。',
+        source: 'https://docs.aws.amazon.com/scheduler/latest/UserGuide/managing-schedule.html',
+      },
+    ],
+  },
+  {
+    id: 'parameterstore',
+    name: 'AWS Systems Manager Parameter Store',
+    short: 'Parameter Store',
+    category: 'security',
+    what: '設定値やシークレットを階層的に保存し、アプリから取得するSystems Managerの機能です。',
+    can: ['StringやSecureStringをバージョン付きで管理', 'KMSを使ったSecureStringの暗号化'],
+    cannot:
+      'SecureStringへ保存しただけで、接続先DBのパスワードを自動ローテーションする機能にはなりません。',
+    use: '環境別の設定値・接続先URL・暗号化したパラメータの一元管理。',
+    integrations: ['kms', 'iam', 'lambda', 'secrets'],
+    alternatives: 'DB認証情報を接続先と連動して自動更新するならSecrets Manager。',
+    keywords: ['configuration', 'SecureString', 'parameter hierarchy'],
+    exam: '設定値の保管・取得と、DBパスワードの自動更新を区別します。',
+    trap: '有効期限の通知・ポリシー設定と、DB側の認証情報を更新するローテーションは別です。',
+    source:
+      'https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html',
+    deep: [
+      {
+        title: 'SecureStringとローテーションは別の要件',
+        text: 'SecureStringはKMSで値を保護し、IAMで取得権限を制限できます。一方、DBとアプリの認証情報を定期的に同期更新するには別の処理が必要です。自動ローテーションが主目的ならSecrets Managerの対応方式を使い、設定値の保管が中心ならParameter Storeを検討します。',
+        source:
+          'https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html',
+      },
+    ],
+  },
+  {
+    id: 'appflow',
+    name: 'Amazon AppFlow',
+    short: 'Amazon AppFlow',
+    category: 'ingestion',
+    what: '対応するSaaSとAWSサービス間でデータを転送する、マネージドの連携サービスです。',
+    can: [
+      '対応コネクタでSaaSデータをS3やRedshiftへ転送',
+      'フィールドマッピングや検証、対応ソースの増分転送',
+    ],
+    cannot: 'すべてのSaaS・任意API・実行方式が無条件に対応しているわけではありません。',
+    use: '対応CRMなどからRedshiftへ、独自の連携コードを抑えてデータを収集。',
+    integrations: ['s3', 'redshift', 'iam'],
+    alternatives: '独自APIの細かい処理はScheduler + Lambda。DBのCDC移行はDMS。',
+    keywords: ['SaaS connector', 'managed integration', 'scheduled flow'],
+    exam: '対応SaaSからの連携と低運用負荷が中心なら、まずAppFlowのコネクタを確認します。',
+    trap: 'Redshiftコネクタは転送先として対応します。Redshiftから読み出す転送元には使えません。',
+    source: 'https://docs.aws.amazon.com/appflow/latest/userguide/what-is-appflow.html',
+    deep: [
+      {
+        title: 'SaaS → AppFlow → Redshift',
+        text: 'SaaS接続と項目マッピングを設定し、S3の中間バケット経由でRedshiftへ取り込みます。推奨のData API接続では、AppFlowによるData API利用とRedshiftによるS3読取を許可するロールを整えます。対応する定型連携ならAPI呼出しや転送制御を一から実装する作業を減らせます。',
+        source: 'https://docs.aws.amazon.com/appflow/latest/userguide/redshift.html',
+      },
+      {
+        title: 'イベントとスケジュールの対応を確認',
+        text: '手動・スケジュール・イベントの実行方式がありますが、イベント実行は変更イベントを提供するSaaSに限られます。スケジュール実行では全件または増分を選び、更新日時などの判定項目を設定します。イベントが発生すればどのSaaSでも起動できる、と考えないことが重要です。',
+        source: 'https://docs.aws.amazon.com/appflow/latest/userguide/flow-triggers.html',
+      },
+    ],
   },
 ];
 export const serviceMap = Object.fromEntries(services.map((s) => [s.id, s])) as Record<

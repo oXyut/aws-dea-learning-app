@@ -136,4 +136,10 @@ export const serviceIcons: Record<string, { file: string; resource: boolean }> =
     file: 'redshift.svg',
     resource: false,
   },
+
+  efs: { file: 'efs.svg', resource: false },
+  eks: { file: 'eks.svg', resource: false },
+  appflow: { file: 'appflow.svg', resource: false },
+  scheduler: { file: 'scheduler.svg', resource: true },
+  parameterstore: { file: 'parameterstore.svg', resource: true },
 };

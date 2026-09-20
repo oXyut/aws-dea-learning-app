@@ -2814,3 +2814,166 @@ h1,
 #service-dialog-title > svg {
   flex-shrink: 0;
 }
+
+/* Applied lessons reuse the workspace's typography and interaction patterns. */
+[hidden] {
+  display: none !important;
+}
+.applied-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
+  margin: 28px 0;
+  background: linear-gradient(110deg, #22241f, #171e29);
+  border: 1px solid #454438;
+  border-radius: 10px;
+}
+.applied-banner strong {
+  display: block;
+  margin-top: 9px;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.applied-banner p {
+  margin-top: 7px;
+  color: #adb6c5;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.applied-banner button {
+  flex-shrink: 0;
+}
+.lesson-source {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  color: #a4bfec;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.lesson-source:hover,
+.lesson-sources a:hover {
+  text-decoration: underline;
+}
+.lesson-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin: 24px 0;
+  padding: 20px;
+  border-top: 1px solid #303946;
+  color: #9ba9bc;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.lesson-sources a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: #aec4e8;
+}
+.advanced-practice .quiz-list {
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.advanced-practice .quiz-list > button {
+  position: relative;
+}
+.advanced-practice .answer-options label {
+  align-items: flex-start;
+}
+.advanced-practice .answer-options input {
+  margin-top: 5px;
+}
+.advanced-practice .answer-letter,
+.advanced-practice .answer-options label > svg {
+  flex-shrink: 0;
+}
+.advanced-practice .answer-options label > span:not(.answer-letter) {
+  flex: 1;
+  min-width: 0;
+}
+.advanced-practice .scenario-card,
+.advanced-practice .option-reason {
+  overflow-wrap: anywhere;
+}
+.advanced-practice .option-reason h4 {
+  flex-wrap: wrap;
+  line-height: 1.8;
+}
+.advanced-practice .option-reason h4 > svg {
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  .advanced-practice .quiz-list {
+    max-height: none;
+  }
+  .advanced-practice .quiz-progress {
+    display: block;
+    min-width: 220px;
+    margin: 0;
+    border: 0;
+    padding: 12px;
+  }
+  .advanced-practice .quiz-progress strong {
+    font-size: 24px;
+    margin-top: 6px;
+  }
+}
+@media (max-width: 800px) {
+  .applied-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+  }
+  .applied-banner strong {
+    font-size: 16px;
+  }
+}
+.advanced-practice .advanced-reason-label {
+  font-size: 14px;
+  font-weight: 550;
+  color: #d4deed;
+  flex: 1;
+}
+.advanced-practice .advanced-option-verdict {
+  font-size: 12px;
+  color: #a9b8ce;
+  margin-top: 9px;
+}
+.advanced-takeaway {
+  background: #1f2c30;
+  border-color: #3d5758;
+  margin: 24px 0;
+}
+.advanced-related,
+.advanced-sources {
+  margin: 25px 0;
+}
+.advanced-related h3,
+.advanced-sources h3 {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.advanced-sources {
+  display: grid;
+  gap: 12px;
+}
+.advanced-sources h3 {
+  margin-bottom: 0;
+}
+.advanced-question-heading {
+  scroll-margin-top: 24px;
+}
+.advanced-reset {
+  font-size: 12px;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+.dialog-section p {
+  overflow-wrap: anywhere;
+}

@@ -158,5 +158,30 @@
     "file": "quality.svg",
     "source": "Resource-Icons_07312026/Res_Analytics/Res_AWS-Glue_Data-Quality_48.svg",
     "sha256": "b82cf73009b059b1308c963ce86d5bea749001efc0e4c759d19eb7098039c777"
+  },
+  {
+    "file": "efs.svg",
+    "source": "Architecture-Service-Icons_07312026/Arch_Storage/48/Arch_Amazon-EFS_48.svg",
+    "sha256": "82f8c32b68799a33b3c6737920d492493e6d293ba58caca65cfd6f4056a80e68"
+  },
+  {
+    "file": "eks.svg",
+    "source": "Architecture-Service-Icons_07312026/Arch_Containers/48/Arch_Amazon-Elastic-Kubernetes-Service_48.svg",
+    "sha256": "83125d0b8a7920b7a13381a8645aacb4efa5ea7a0af3049949e4530491b46ca8"
+  },
+  {
+    "file": "appflow.svg",
+    "source": "Architecture-Service-Icons_07312026/Arch_Application-Integration/48/Arch_Amazon-AppFlow_48.svg",
+    "sha256": "cd2e3c85690c084e07d8fa6abf5b02d011543c14bd815cf7dc87c182b0952cd2"
+  },
+  {
+    "file": "scheduler.svg",
+    "source": "Resource-Icons_07312026/Res_Application-Integration/Res_Amazon-EventBridge_Scheduler_48.svg",
+    "sha256": "5e1bd3512901e512409e394e225196ada796f9f59eaf7df74c0a7917462cfa99"
+  },
+  {
+    "file": "parameterstore.svg",
+    "source": "Resource-Icons_07312026/Res_Management-Governance/Res_AWS-Systems-Manager_Parameter-Store_48.svg",
+    "sha256": "467cec947b3208eed582f11cb8502079fece17e972d0f0653fb9a4bdfd958ed3"
   }
 ]
