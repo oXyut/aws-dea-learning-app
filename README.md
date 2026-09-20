@@ -107,3 +107,7 @@ spec.md                        元の仕様書
 - [DEA-C01公式試験ガイド](https://docs.aws.amazon.com/aws-certification/latest/data-engineer-associate-01/data-engineer-associate-01.html)：試験範囲は改訂されるため、受験前に最新版を確認してください。
 
 図は役割を学ぶための概念図です。VPC、IAM、KMS、エラーパス等を含む実際のデプロイ図ではありません。CDC図の複数ターゲットは選択肢であり、1タスクがすべてに同時配信する意味ではありません。課金単価や細かなクォータは変動するため固定値を掲載していません。
+
+## AWS公式アイコン
+
+構成図・サービス一覧・詳細画面に、[AWS Architecture Icons](https://aws.amazon.com/architecture/icons/) の2026年7月31日版を使用しています。元の色・形を変更せず、SVGを同梱しています。出典とファイルの対応は [ATTRIBUTION.md](public/aws-icons/ATTRIBUTION.md)、元ファイル名とハッシュは [manifest.json](public/aws-icons/manifest.json) を参照してください。35サービス中34サービスに対応し、今回の配布物に単独アイコンがないQuickSightは汎用アイコンを使用しています。

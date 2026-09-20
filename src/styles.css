@@ -2791,3 +2791,26 @@ h1,
     pointer-events: none;
   }
 }
+
+/* AWS artwork retains its original colors and proportions. */
+.aws-service-icon {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.aws-resource-icon {
+  background: #fff;
+}
+.service-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#service-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+#service-dialog-title > svg {
+  flex-shrink: 0;
+}

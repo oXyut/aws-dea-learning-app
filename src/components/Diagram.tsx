@@ -1,5 +1,6 @@
 import { Workflow, Layers3, Database, Shield, Radio, Cpu, Boxes, Activity } from 'lucide-react';
 import { categories, serviceMap, type Service } from '../data/services';
+import { serviceIcons } from '../data/serviceIcons';
 import { type Pattern, type FlowNode } from '../data/patterns';
 
 export const icons = {
@@ -12,7 +13,20 @@ export const icons = {
   security: Shield,
   monitoring: Activity,
 };
-export function ServiceIcon({ service, size = 22 }: { service?: Service; size?: number }) {
+export function ServiceIcon({ service, size = 28 }: { service?: Service; size?: number }) {
+  const asset = service && serviceIcons[service.id];
+  if (asset) {
+    return (
+      <img
+        className={`aws-service-icon${asset.resource ? ' aws-resource-icon' : ''}`}
+        src={`${import.meta.env.BASE_URL}aws-icons/${asset.file}`}
+        width={size}
+        height={size}
+        alt=""
+        aria-hidden="true"
+      />
+    );
+  }
   const Icon = service ? icons[service.category] : Boxes;
   return <Icon size={size} />;
 }

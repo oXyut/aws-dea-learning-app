@@ -19,6 +19,7 @@ import { categories, coreServices, serviceMap, services } from '../data/services
 import { patterns } from '../data/patterns';
 import { comparisons, comparisonDimensions } from '../data/comparisons';
 import { quizzes } from '../data/quizzes';
+import { ServiceIcon } from './Diagram';
 
 export function ServiceExplorer({ onOpen }: { onOpen: (id: string) => void }) {
   const [search, setSearch] = useState('');
@@ -106,7 +107,10 @@ export function ServiceExplorer({ onOpen }: { onOpen: (id: string) => void }) {
                   {coreServices.includes(s.id) && <b>CORE</b>}
                 </span>
                 <h2>
-                  {s.short}
+                  <span className="service-card-title">
+                    <ServiceIcon service={s} size={36} />
+                    {s.short}
+                  </span>
                   <ArrowUpRight size={18} />
                 </h2>
                 <span className="service-fullname">{s.name}</span>
@@ -175,7 +179,10 @@ export function ServiceDialog({
             </button>
           </div>
           <div ref={scroller} className="dialog-content">
-            <h2 id="service-dialog-title">{service.name}</h2>
+            <h2 id="service-dialog-title">
+              <ServiceIcon service={service} size={48} />
+              <span>{service.name}</span>
+            </h2>
             <div className="keyword-row">
               {service.keywords.map((k) => (
                 <span key={k}>{k}</span>
