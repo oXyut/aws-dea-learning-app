@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { lessons } from '../data/curriculum';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -145,12 +146,14 @@ export function ServiceDialog({
   onOpen,
   onPattern,
   onCompare,
+  onLesson,
 }: {
   serviceId: string | null;
   onClose: () => void;
   onOpen: (id: string) => void;
   onPattern: (id: string) => void;
   onCompare: (id: string) => void;
+  onLesson: (id: string) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -250,6 +253,26 @@ export function ServiceDialog({
                     <ArrowUpRight size={14} />
                   </button>
                 ))}
+              </div>
+            </section>
+            <section className="dialog-section">
+              <h3>本文で基礎から学ぶ</h3>
+              <div className="integration-list">
+                {lessons
+                  .filter((lesson) => lesson.services.includes(service.id))
+                  .map((lesson) => (
+                    <button
+                      key={lesson.id}
+                      onClick={() => {
+                        onClose();
+                        onLesson(lesson.id);
+                      }}
+                    >
+                      <BookOpen size={15} />
+                      {lesson.title}
+                      <ArrowUpRight size={14} />
+                    </button>
+                  ))}
               </div>
             </section>
             <section className="dialog-section">

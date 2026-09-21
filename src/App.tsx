@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Workflow,
   ListChecks,
@@ -15,58 +15,131 @@ import {
   Menu,
   X,
   ExternalLink,
+  House,
 } from 'lucide-react';
 import { AdvancedPractice } from './components/AdvancedPractice';
 import { categories, serviceMap } from './data/services';
 import { patterns } from './data/patterns';
+import { Curriculum } from './components/Curriculum';
+import { readRoute, type View } from './data/navigation';
+import { useStoredState } from './hooks/useStoredState';
+import { parseBasicAnswers } from './data/practiceProgress';
+import { lessons } from './data/curriculum';
+import { HomePage } from './components/HomePage';
+import {
+  courseStorageKey,
+  parseCourseProgress,
+  type CourseProgress,
+} from './data/learningProgress';
 
 import { ServiceExplorer, ServiceDialog, CompareView, QuizView } from './components/LearningViews';
 
 import { Diagram, ServiceIcon, colorFor, icons } from './components/Diagram';
 
-type View = 'patterns' | 'services' | 'compare' | 'quiz' | 'advanced';
 export default function App() {
-  const [view, setView] = useState<View>('patterns');
+  const [initialRoute] = useState(() => readRoute(window.location.hash));
+  const [view, setView] = useState<View>(initialRoute.view);
+  const [courseProgress, setCourseProgress, courseWarning] = useStoredState<CourseProgress>(
+    courseStorageKey,
+    {},
+    parseCourseProgress,
+  );
+  const [lessonId, setLessonId] = useState(
+    initialRoute.view === 'learn' ? initialRoute.id! : 'foundations',
+  );
   const [quizIndex, setQuizIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers, practiceWarning] = useStoredState<Record<string, string>>(
+    'dea-flow-lab:basic:v1',
+    {},
+    parseBasicAnswers,
+  );
   const [serviceId, setServiceId] = useState<string | null>(null);
-  const [comparisonId, setComparisonId] = useState('athena-redshift');
-  const [patternId, setPatternId] = useState('serverless-lake');
+  const [comparisonId, setComparisonId] = useState(
+    initialRoute.view === 'compare' ? initialRoute.id! : 'athena-redshift',
+  );
+  const [patternId, setPatternId] = useState(
+    initialRoute.view === 'patterns' ? initialRoute.id! : 'serverless-lake',
+  );
   const [nodeId, setNodeId] = useState('raw');
   const [playing, setPlaying] = useState(true);
   const [mobileMenu, setMobileMenu] = useState(false);
   const pattern = patterns.find((p) => p.id === patternId)!;
   const node = pattern.nodes.find((n) => n.id === nodeId) || pattern.nodes[0];
   const service = node.service ? serviceMap[node.service] : undefined;
-  function navigate(next: View) {
+  useEffect(() => {
+    function restoreRoute() {
+      // The skip link is an in-page anchor, not an application route.
+      if (window.location.hash === '#main-content') return;
+      const route = readRoute(window.location.hash);
+      setView(route.view);
+      if (route.view === 'learn') setLessonId(route.id!);
+      if (route.view === 'patterns') {
+        setPatternId(route.id!);
+        setNodeId(patterns.find((entry) => entry.id === route.id)!.nodes[0].id);
+      }
+      if (route.view === 'compare') setComparisonId(route.id!);
+      setServiceId(null);
+      setMobileMenu(false);
+    }
+    window.addEventListener('hashchange', restoreRoute);
+    return () => window.removeEventListener('hashchange', restoreRoute);
+  }, []);
+  function navigate(next: View, id?: string) {
     setView(next);
     setMobileMenu(false);
+    const targetId =
+      id ??
+      (next === 'learn'
+        ? lessonId
+        : next === 'patterns'
+          ? patternId
+          : next === 'compare'
+            ? comparisonId
+            : undefined);
+    window.location.hash = `${next}${targetId ? `/${targetId}` : ''}`;
     window.scrollTo({ top: 0 });
+  }
+  function openLesson(id: string) {
+    setLessonId(id);
+    setServiceId(null);
+    navigate('learn', id);
+    requestAnimationFrame(() => {
+      const heading = document.getElementById('lesson-heading');
+      heading?.focus({ preventScroll: true });
+      heading?.scrollIntoView({ block: 'start' });
+    });
   }
   function openPattern(id: string) {
     const next = patterns.find((p) => p.id === id)!;
     setPatternId(id);
     setNodeId(next.nodes[0].id);
-    navigate('patterns');
+    navigate('patterns', id);
     window.scrollTo({ top: 0 });
   }
   function openComparison(id: string) {
     setComparisonId(id);
-    navigate('compare');
+    navigate('compare', id);
     window.scrollTo({ top: 0 });
   }
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main-content">
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById('main-content')?.focus();
+        }}
+      >
         本文へスキップ
       </a>
       <aside id="primary-sidebar" className={`sidebar ${mobileMenu ? 'open' : ''}`}>
         <a
           className="brand"
-          href="#"
+          href="#home"
           onClick={(e) => {
             e.preventDefault();
-            navigate('patterns');
+            navigate('home');
           }}
         >
           <span className="brand-mark">
@@ -81,6 +154,8 @@ export default function App() {
         <nav>
           {(
             [
+              { id: 'home', label: 'トップページ', en: 'Start here', icon: House },
+              { id: 'learn', label: '体系的に学ぶ', en: 'Learning path', icon: BookOpen },
               {
                 id: 'patterns',
                 label: 'アーキテクチャ',
@@ -160,60 +235,91 @@ export default function App() {
           <div className="breadcrumb">
             Workspace <ChevronRight size={13} />
             <span>
-              {view === 'patterns'
-                ? 'Architecture patterns'
-                : view === 'services'
-                  ? 'Service explorer'
-                  : view === 'compare'
-                    ? 'Compare services'
-                    : view === 'advanced'
-                      ? 'Applied practice'
-                      : 'Scenario practice'}
+              {view === 'home'
+                ? 'トップページ'
+                : view === 'learn'
+                  ? 'Learning path'
+                  : view === 'patterns'
+                    ? 'Architecture patterns'
+                    : view === 'services'
+                      ? 'Service explorer'
+                      : view === 'compare'
+                        ? 'Compare services'
+                        : view === 'advanced'
+                          ? 'Applied practice'
+                          : 'Scenario practice'}
             </span>
           </div>
           <span className="exam-badge">
             <GraduationCap size={15} /> AWS Certified Data Engineer <b>ASSOCIATE</b>
           </span>
         </header>
-        <main id="main-content">
-          <div className="page-heading">
-            <div className="eyebrow">LEARN THE CONNECTIONS</div>
-            <div className="heading-line">
-              <h1>
-                {view === 'patterns'
-                  ? 'データの流れから、理解する。'
-                  : view === 'services'
-                    ? 'サービスを知る。役割が見える。'
-                    : view === 'compare'
-                      ? '似ているサービス、選ぶ理由は違う。'
-                      : view === 'advanced'
-                        ? '条件を見抜き、判断を深める。'
-                        : '要件を読んで、構成を選ぶ。'}
-              </h1>
-              <span className="edition">DEA-C01 LEARNING GUIDE</span>
+        <main id="main-content" tabIndex={-1}>
+          {view === 'home' ? (
+            <HomePage
+              progress={courseProgress}
+              warning={courseWarning}
+              onNavigate={navigate}
+              onLesson={openLesson}
+            />
+          ) : (
+            <div className="page-heading">
+              <div className="eyebrow">LEARN THE CONNECTIONS</div>
+              <div className="heading-line">
+                <h1>
+                  {view === 'learn'
+                    ? '基礎から、判断できる知識へ。'
+                    : view === 'patterns'
+                      ? 'データの流れから、理解する。'
+                      : view === 'services'
+                        ? 'サービスを知る。役割が見える。'
+                        : view === 'compare'
+                          ? '似ているサービス、選ぶ理由は違う。'
+                          : view === 'advanced'
+                            ? '条件を見抜き、判断を深める。'
+                            : '要件を読んで、構成を選ぶ。'}
+                </h1>
+                <span className="edition">DEA-C01 LEARNING GUIDE</span>
+              </div>
+              <p>
+                {view === 'learn'
+                  ? `${lessons.length}章の本文・具体例・確認問題で、DEA-C01の4分野を順に学びます。`
+                  : view === 'patterns'
+                    ? 'どこに保存し、どこで変換し、どう分析するのか。構成をたどって、サービスを選ぶ理由を学びましょう。'
+                    : view === 'services'
+                      ? 'できることだけでなく、向いていない用途まで。データ基盤の中での役割を確かめましょう。'
+                      : view === 'compare'
+                        ? 'キーワードを丸暗記せず、利用頻度・処理方式・運用負荷から判断しましょう。'
+                        : view === 'advanced'
+                          ? '運用・権限・データの寿命まで。20のオリジナルシナリオで、選ぶ理由と選ばない理由を確かめましょう。'
+                          : '実際の試験問題ではなく、サービスの選択理由を考えるためのオリジナルシナリオです。'}
+              </p>
             </div>
-            <p>
-              {view === 'patterns'
-                ? 'どこに保存し、どこで変換し、どう分析するのか。構成をたどって、サービスを選ぶ理由を学びましょう。'
-                : view === 'services'
-                  ? 'できることだけでなく、向いていない用途まで。データ基盤の中での役割を確かめましょう。'
-                  : view === 'compare'
-                    ? 'キーワードを丸暗記せず、利用頻度・処理方式・運用負荷から判断しましょう。'
-                    : view === 'advanced'
-                      ? '運用・権限・データの寿命まで。20のオリジナルシナリオで、選ぶ理由と選ばない理由を確かめましょう。'
-                      : '実際の試験問題ではなく、サービスの選択理由を考えるためのオリジナルシナリオです。'}
-            </p>
-          </div>
-          <div className="category-strip">
-            {categories.map((c) => {
-              const Icon = icons[c.id];
-              return (
-                <div key={c.id} style={{ '--accent': c.color } as React.CSSProperties}>
-                  <Icon size={15} />
-                  <span>{c.name}</span>
-                </div>
-              );
-            })}
+          )}
+          {view !== 'learn' && view !== 'home' && (
+            <div className="category-strip">
+              {categories.map((c) => {
+                const Icon = icons[c.id];
+                return (
+                  <div key={c.id} style={{ '--accent': c.color } as React.CSSProperties}>
+                    <Icon size={15} />
+                    <span>{c.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <div hidden={view !== 'learn'}>
+            <Curriculum
+              progress={courseProgress}
+              setProgress={setCourseProgress}
+              warning={courseWarning}
+              lessonId={lessonId}
+              onLesson={openLesson}
+              onOpen={setServiceId}
+              onPattern={openPattern}
+              onPractice={() => navigate('advanced')}
+            />
           </div>
           {view === 'patterns' ? (
             <>
@@ -249,8 +355,7 @@ export default function App() {
                       key={p.id}
                       className={`pattern-option ${p.id === patternId ? 'active' : ''}`}
                       onClick={() => {
-                        setPatternId(p.id);
-                        setNodeId(p.nodes[0].id);
+                        openPattern(p.id);
                       }}
                     >
                       <span className="pattern-index">{String(i + 1).padStart(2, '0')}</span>
@@ -422,7 +527,7 @@ export default function App() {
           ) : view === 'compare' ? (
             <CompareView
               comparisonId={comparisonId}
-              onSelect={setComparisonId}
+              onSelect={openComparison}
               onOpen={setServiceId}
             />
           ) : view === 'quiz' ? (
@@ -438,6 +543,11 @@ export default function App() {
           <div hidden={view !== 'advanced'}>
             <AdvancedPractice onOpen={setServiceId} onPattern={openPattern} />
           </div>
+          {view === 'quiz' && (
+            <p className="course-storage-note" role="status">
+              {practiceWarning || '確定した回答はこのブラウザに自動保存します。'}
+            </p>
+          )}
           <footer className="page-footer">
             <span>
               DEA Flow Lab <i /> サービスを覚える。その先へ。
@@ -458,6 +568,7 @@ export default function App() {
         onOpen={setServiceId}
         onPattern={openPattern}
         onCompare={openComparison}
+        onLesson={openLesson}
       />
     </div>
   );

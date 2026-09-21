@@ -2,6 +2,12 @@
 
 AWS Certified Data Engineer – Associate（DEA-C01）の学習用Webアプリです。サービス単体の説明から、比較、アーキテクチャ、問題文での判断へ進めます。ローカルでも利用できます。
 
+トップページ（`/` または `#home`）でサイトの目的と学び方を案内します。「順番に学ぶ」「気になることを調べる」「問題で確認する」から目的に合う入口を選べます。初回は第1章を案内し、学習を始めた後は保存した進捗から未完了章を開けます。ロゴやサイドバーからいつでもトップに戻れます。
+
+入口の「体系的に学ぶ」には、基礎から4分野を読む23章、入力と結果を追う具体例、24問の章末確認、30項目の用語辞典を収録しています。2026-09-21に公式試験ガイドv1.1と照合しました。全17タスクへの対応章を表示しますが、全120スキルの習得や合格を保証する教材ではありません。
+
+[敵対的レビューと実装後の判定](docs/adversarial-review-2026-09-21.md) · [追加教材の出典確認記録](docs/source-check-2026-09-21.json)
+
 **公開サイト：[DEA Flow Lab](https://oxyut.github.io/aws-dea-learning-app/)**
 
 ## GitHub Pagesへの自動公開
@@ -53,6 +59,9 @@ npm run format # ソース整形
 
 ## できること
 
+- **23章の学習コース**：前提用語、取り込みと冪等性、Spark、SQL、モデリング、品質、IAM/VPC、監査とガバナンスまで。各章に到達目標・本文・具体例・失敗条件・解説付き確認問題・出典を用意。
+- **試験範囲への導線**：17タスクと章の対応、ドメインの出題比率、学習範囲と未収録事項を表示。改訂項目のLLM、Iceberg/S3 Tables、HNSW/IVF、SageMaker Catalog/Unified Studioも扱います。
+- **学習の継続**：既読と章末確認を分け、両方を満たした章だけ確認済みにします。本文検索、分野・未完了フィルタ、用語辞典、次の未完了章への案内、章URL・ブラウザの戻る操作に対応。
 - **14構成の探索**：Serverless Data Lake、Batch Analytics、Streaming Analytics、Streaming Data Lake、Data Warehouse、CDC、Big Data Processing、Event Driven Pipelineに加え、定期API収集、Firehose形式変換、PII検出後の処理、Lambda＋EFS、SaaS取り込み、Redshiftデータ共有。
 - **動くデータフロー**：実データ・メタデータ・制御イベントを色と線種で区別。再生・停止、ノード選択、ステップ解説。
 - **40サービスの解説**：既存35サービスにEFS・EKS・Scheduler・Parameter Store・AppFlowを追加。主要9サービスの基礎説明に加え、公式出典付きの応用解説47項目を追加。
@@ -63,7 +72,9 @@ npm run format # ソース整形
 - **アクセシビリティ**：キーボード操作、ネイティブdialogのフォーカス制御・Escape、本文スキップ、動きを抑える設定への対応。
 - **レスポンシブ**：PC主体。小さな画面ではナビゲーションを開閉し、図と比較表は領域内で横スクロール。
 
-シナリオの回答はアプリを開いている間、画面切り替え後も維持します。再読み込みやタブを閉じるとリセットします。永続的な学習履歴やアカウント機能はありません。
+章の既読・確定済み回答、基礎/応用シナリオの確定済み回答はlocalStorageへ自動保存します。再読み込み・タブを閉じた後も同じブラウザと配信元で復元されます。未確定の選択は保存しません。アカウントや別端末との同期はありません。ブラウザの保存データを削除すると進捗も消えます。保存が拒否された場合やデータが壊れている場合は画面で通知し、学習は継続できます。
+
+章URL例：ローカルでは `http://127.0.0.1:5173/#learn/sql`。GitHub PagesではサイトURLの末尾に `#learn/sql` を付けます。存在しない章URLは最初の章へ安全に戻します。
 
 ## 構成
 
@@ -73,10 +84,17 @@ React + TypeScript + Vite。図はHTMLの選択可能なサービスカードと
 src/
   App.tsx                      ナビゲーション・アーキテクチャ探索・状態
   components/
+    HomePage.tsx               サイトの目的・目的別の入口・学習の再開
+    Curriculum.tsx             学習コース・範囲表・用語辞典・章末確認
     Diagram.tsx                接続線とサービスノードの描画
     LearningViews.tsx           サービス詳細・比較・基礎シナリオ
     AdvancedPractice.tsx       応用シナリオ・複数選択の採点と復習
   data/
+    curriculum*.ts             23章の本文・具体例・確認問題・17タスク
+    glossary.ts                用語と本文への参照
+    learningProgress.ts        完了条件・採点・保存値の検証
+    navigation.ts              ハッシュURLの解釈
+    practiceProgress.ts        既存シナリオの保存値の検証
     services.ts                サービス、カテゴリ、連携、公式資料
     patterns.ts                ノード、エッジ、役割、ステップ
     comparisons.ts             比較軸と10組の比較
@@ -84,12 +102,16 @@ src/
     advancedQuizzes.ts         応用20問・判断理由・公式根拠・採点
   styles.css                   テーマとレスポンシブ表示
   main.tsx                     エントリーポイント
+  hooks/useStoredState.ts      保存失敗時も使えるlocalStorageフック
 tests/content.test.ts          参照整合性と重要な教育上の制約
+tests/curriculum.test.ts       教材参照・採点・完了条件・復元・URL
 public/favicon.svg             アプリアイコン
 spec.md                        元の仕様書
 ```
 
 ## 教材を拡張する
+
+章を追加する場合は `Lesson` 型に従い、本文・入力例・結果・理由・確認問題・出典と確認日をそろえます。タスク対応はリンク先の章が実際に説明している内容に限定し、対応章があることを全スキル習得率へ換算しません。問題IDと選択肢の意味を変える場合は保存済み回答の互換性を確認し、必要なら保存キーの版を上げてください。
 
 1. サービス追加：`services.ts` の `Service` 型に従ってエントリーを追加します。安定したID、適さない用途、比較対象、公式資料のURLを含めます。
 2. 図を追加：`patterns.ts` の `Pattern` にノード・エッジ・学習ステップを追加します。ノードはサービスIDを参照。接続は `data` / `metadata` / `event` を使い分けます。

@@ -1,0 +1,341 @@
+{
+  "checkedAt": "2026-09-21",
+  "results": [
+    {
+      "title": "CloudWatch Logs Insights",
+      "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html",
+      "pageTitle": "Analyzing log data with CloudWatch Logs Insights - Amazon CloudWatch Logs"
+    },
+    {
+      "title": "QueryとScanの設計",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-query-scan.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-query-scan.html",
+      "pageTitle": "Best practices for querying and scanning data in DynamoDB - Amazon DynamoDB"
+    },
+    {
+      "title": "GSI",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html",
+      "pageTitle": "Using Global Secondary Indexes in DynamoDB - Amazon DynamoDB"
+    },
+    {
+      "title": "DynamoDB TTL",
+      "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html",
+      "pageTitle": "Using time to live (TTL) in DynamoDB - Amazon DynamoDB"
+    },
+    {
+      "title": "S3 Lifecycleとバージョン",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/lifecycle-expire-general-considerations.html",
+      "pageTitle": "Expiring objects - Amazon Simple Storage Service"
+    },
+    {
+      "title": "S3 Tables",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html",
+      "pageTitle": "Working with Amazon S3 Tables and table buckets - Amazon Simple Storage Service"
+    },
+    {
+      "title": "S3 SSE-KMS",
+      "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html",
+      "pageTitle": "Using server-side encryption with AWS KMS keys (SSE-KMS) - Amazon Simple Storage Service"
+    },
+    {
+      "title": "API GatewayのAPIキー",
+      "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html",
+      "pageTitle": "Usage plans and API keys for REST APIs in API Gateway - Amazon API Gateway"
+    },
+    {
+      "title": "AthenaとData Catalog",
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/data-sources-glue.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/athena/latest/ug/data-sources-glue.html",
+      "pageTitle": "Use AWS Glue Data Catalog to connect to your data - Amazon Athena"
+    },
+    {
+      "title": "Athena partition projection",
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/athena/latest/ug/partition-projection.html",
+      "pageTitle": "Use partition projection with Amazon Athena - Amazon Athena"
+    },
+    {
+      "title": "Icebergの保守",
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-data-optimization.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-data-optimization.html",
+      "pageTitle": "Optimize Iceberg tables - Amazon Athena"
+    },
+    {
+      "title": "AthenaとIceberg",
+      "url": "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg.html",
+      "pageTitle": "Query Apache Iceberg tables - Amazon Athena"
+    },
+    {
+      "title": "CloudTrail Lakeの提供条件変更",
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-lake-service-availability-change.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-lake-service-availability-change.html",
+      "pageTitle": "CloudTrail Lake availability change - AWS CloudTrail"
+    },
+    {
+      "title": "CloudTrailデータイベント",
+      "url": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html",
+      "pageTitle": "Logging data events - AWS CloudTrail"
+    },
+    {
+      "title": "Bedrockモデル評価",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation.html",
+      "pageTitle": "Evaluate the performance of Amazon Bedrock resources - Amazon Bedrock"
+    },
+    {
+      "title": "Bedrockモデルの呼び出し",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/bedrock/latest/userguide/inference.html",
+      "pageTitle": "Making inference requests - Amazon Bedrock"
+    },
+    {
+      "title": "Bedrockのchunking",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-chunking.html",
+      "pageTitle": "How content chunking works for knowledge bases - Amazon Bedrock"
+    },
+    {
+      "title": "Knowledge Basesへの取り込み",
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-how-data.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/bedrock/latest/userguide/kb-how-data.html",
+      "pageTitle": "Turning data into a knowledge base - Amazon Bedrock"
+    },
+    {
+      "title": "AWS Config",
+      "url": "https://docs.aws.amazon.com/config/latest/developerguide/WhatIsConfig.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/config/latest/developerguide/WhatIsConfig.html",
+      "pageTitle": "What Is AWS Config? - AWS Config"
+    },
+    {
+      "title": "DMS CDC",
+      "url": "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Task.CDC.html",
+      "pageTitle": "Creating tasks for ongoing replication using AWS DMS - AWS Database Migration Service"
+    },
+    {
+      "title": "Firehose形式変換",
+      "url": "https://docs.aws.amazon.com/firehose/latest/dev/record-format-conversion.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/firehose/latest/dev/record-format-conversion.html",
+      "pageTitle": "Convert input data format in Amazon Data Firehose - Amazon Data Firehose"
+    },
+    {
+      "title": "DQDLルール一覧",
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/dqdl-rule-types.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/glue/latest/dg/dqdl-rule-types.html",
+      "pageTitle": "DQDL rule type reference - AWS Glue"
+    },
+    {
+      "title": "DQDL",
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/dqdl.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/glue/latest/dg/dqdl.html",
+      "pageTitle": "Data Quality Definition Language (DQDL) reference - AWS Glue"
+    },
+    {
+      "title": "Glue bookmarks",
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-continuations.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/glue/latest/dg/monitor-continuations.html",
+      "pageTitle": "Tracking processed data using job bookmarks - AWS Glue"
+    },
+    {
+      "title": "Glue Observability",
+      "url": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/glue/latest/dg/monitor-observability.html",
+      "pageTitle": "Monitoring with AWS Glue Observability metrics - AWS Glue"
+    },
+    {
+      "title": "IAM roleの概念",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html",
+      "pageTitle": "IAM roles - AWS Identity and Access Management"
+    },
+    {
+      "title": "IAM評価ロジック",
+      "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html",
+      "pageTitle": "Policy evaluation logic - AWS Identity and Access Management"
+    },
+    {
+      "title": "クロスアカウントKMS",
+      "url": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-modifying-external-accounts.html",
+      "pageTitle": "Allowing users in other accounts to use a KMS key - AWS Key Management Service"
+    },
+    {
+      "title": "Lake Formationの権限",
+      "url": "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/lake-formation/latest/dg/lf-permissions-reference.html",
+      "pageTitle": "Lake Formation permissions reference - AWS Lake Formation"
+    },
+    {
+      "title": "Lambdaのベストプラクティス",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html",
+      "pageTitle": "Best practices for working with AWS Lambda functions - AWS Lambda"
+    },
+    {
+      "title": "部分バッチ失敗",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/services-kinesis-batchfailurereporting.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/lambda/latest/dg/services-kinesis-batchfailurereporting.html",
+      "pageTitle": "Configuring partial batch response with Kinesis Data Streams and Lambda - AWS Lambda"
+    },
+    {
+      "title": "LambdaとKinesis",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html",
+      "pageTitle": "Using Lambda to process records from Amazon Kinesis Data Streams - AWS Lambda"
+    },
+    {
+      "title": "Macie",
+      "url": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/macie/latest/user/what-is-macie.html",
+      "pageTitle": "What is Amazon Macie? - Amazon Macie"
+    },
+    {
+      "title": "MWAAのトラブルシューティング",
+      "url": "https://docs.aws.amazon.com/mwaa/latest/userguide/troubleshooting.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/mwaa/latest/userguide/troubleshooting.html",
+      "pageTitle": "Troubleshooting Amazon Managed Workflows for Apache Airflow - Amazon Managed Workflows for Apache Airflow"
+    },
+    {
+      "title": "Glue Spark性能調整",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/introduction.html",
+      "pageTitle": "Best practices for performance tuning AWS Glue for Apache Spark jobs - AWS Prescriptive Guidance"
+    },
+    {
+      "title": "Redshiftテーブル設計",
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/c_designing-tables-best-practices.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/redshift/latest/dg/c_designing-tables-best-practices.html",
+      "pageTitle": "Amazon Redshift best practices for designing tables - Amazon Redshift"
+    },
+    {
+      "title": "Redshiftの窓関数",
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/c_Window_functions.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/redshift/latest/dg/c_Window_functions.html",
+      "pageTitle": "Window functions - Amazon Redshift"
+    },
+    {
+      "title": "Redshiftのfederated query",
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/federated-overview.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/redshift/latest/dg/federated-overview.html",
+      "pageTitle": "Querying data with federated queries in Amazon Redshift - Amazon Redshift"
+    },
+    {
+      "title": "Redshiftのマテリアライズドビュー",
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/materialized-view-overview.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/redshift/latest/dg/materialized-view-overview.html",
+      "pageTitle": "Materialized views in Amazon Redshift - Amazon Redshift"
+    },
+    {
+      "title": "COUNT",
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/r_COUNT.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/redshift/latest/dg/r_COUNT.html",
+      "pageTitle": "COUNT function - Amazon Redshift"
+    },
+    {
+      "title": "JOIN例",
+      "url": "https://docs.aws.amazon.com/redshift/latest/dg/r_Join_examples.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/redshift/latest/dg/r_Join_examples.html",
+      "pageTitle": "JOIN examples - Amazon Redshift"
+    },
+    {
+      "title": "購読とアクセス申請（IAM-based domain）",
+      "url": "https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/catalog-iam-request-access.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/catalog-iam-request-access.html",
+      "pageTitle": "Request access to data - Amazon SageMaker Unified Studio"
+    },
+    {
+      "title": "Unified Studioの概念",
+      "url": "https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/concepts.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/concepts.html",
+      "pageTitle": "Amazon SageMaker Unified Studio terminology and concepts - Amazon SageMaker Unified Studio"
+    },
+    {
+      "title": "SageMaker Catalogのリネージ",
+      "url": "https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/datazone-data-lineage.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/sagemaker-unified-studio/latest/userguide/datazone-data-lineage.html",
+      "pageTitle": "Data lineage in Amazon SageMaker Unified Studio - Amazon SageMaker Unified Studio"
+    },
+    {
+      "title": "AWS SAM",
+      "url": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html",
+      "pageTitle": "What is the AWS Serverless Application Model (AWS SAM)? - AWS Serverless Application Model"
+    },
+    {
+      "title": "Step Functionsのエラー処理",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html",
+      "pageTitle": "Handling errors in Step Functions workflows - AWS Step Functions"
+    },
+    {
+      "title": "VPC endpoint policy",
+      "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-access.html",
+      "status": 200,
+      "finalUrl": "https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints-access.html",
+      "pageTitle": "Control access to VPC endpoints using endpoint policies - Amazon Virtual Private Cloud"
+    },
+    {
+      "title": "pgvectorのHNSWとIVFFlat（実装元）",
+      "url": "https://github.com/pgvector/pgvector#hnsw",
+      "status": 200,
+      "finalUrl": "https://github.com/pgvector/pgvector",
+      "pageTitle": "GitHub - pgvector/pgvector: Open-source vector similarity search for Postgres · GitHub"
+    }
+  ]
+}

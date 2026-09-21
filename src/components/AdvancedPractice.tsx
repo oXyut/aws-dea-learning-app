@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { advancedQuizzes, isAdvancedAnswerCorrect } from '../data/advancedQuizzes';
 import { serviceMap } from '../data/services';
+import { useStoredState } from '../hooks/useStoredState';
+import { parseAdvancedAnswers } from '../data/practiceProgress';
 
 export function AdvancedPractice({
   onOpen,
@@ -22,7 +24,11 @@ export function AdvancedPractice({
 }) {
   const [index, setIndex] = useState(0);
   const [choices, setChoices] = useState<Record<string, string[]>>({});
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [answers, setAnswers, warning] = useStoredState<Record<string, string[]>>(
+    'dea-flow-lab:advanced:v1',
+    {},
+    parseAdvancedAnswers,
+  );
   const heading = useRef<HTMLHeadingElement>(null);
   const quiz = advancedQuizzes[index];
   const submitted = answers[quiz.id];
@@ -89,6 +95,7 @@ export function AdvancedPractice({
             <i style={{ width: `${(answered / advancedQuizzes.length) * 100}%` }} />
           </div>
           <p>正解 {correct} 問 · 複数選択は完全一致で判定</p>
+          <p role="status">{warning || '確定した回答はこのブラウザに自動保存します。'}</p>
           <button
             className="text-button advanced-reset"
             onClick={resetAll}
